@@ -47,7 +47,7 @@ use rand::prelude::*;
 *
 *
 * */
-#[derive(Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub enum STUNMessageClass {
     //First two bits are the fixed bits `00`
     Request = 0b0000_0000_0000_0000,
@@ -56,7 +56,7 @@ pub enum STUNMessageClass {
     ResponseError = 0b0000_0001_0001_0000,
 }
 
-#[derive(Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub enum STUNMessageMethod {
     Binding = 0b0000_0000_0000_0001,
 }
@@ -114,6 +114,9 @@ impl STUNHeader {
             transaction_id: tid,
         };
     }
+    pub fn increment_message_length(&mut self, new_attribute_size: u16){
+        self.message_length += new_attribute_size;
+    }
 }
 
 #[cfg(test)]
@@ -135,16 +138,17 @@ mod test {
 
         let mut rng = thread_rng();
         let id = rng.gen();
-        let known_id_header = STUNHeader::new(
+        let mut known_id_header = STUNHeader::new(
             STUNMessageClass::Request,
             STUNMessageMethod::Binding,
             Some(id),
         );
+        known_id_header.increment_message_length(0b0100); //Incrementing by 4
         assert!(
             matches!(known_id_header, STUNHeader{message_class, message_method, message_length, magic_number, transaction_id}
              if message_class == STUNMessageClass::Request
                 && message_method == STUNMessageMethod::Binding
-                && message_length == 0
+                && message_length == 4
                 && magic_number == STUN_5389_MAGIC_NUMBER_U32
                 && transaction_id == id
             )

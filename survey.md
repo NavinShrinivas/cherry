@@ -18,11 +18,11 @@
    the client knows that it is not NATed and the effective mapping will
    be Endpoint-Independent.
 
-   In test II, the client sends a Binding Request to the alternate
+   In test `II`, the client sends a Binding Request to the alternate
    address, but primary port.  If the XOR-MAPPED-ADDRESS in the Binding
-   Response is the same as test I the NAT currently has Endpoint-
+   Response is the same as test `I` the NAT currently has Endpoint-
    Independent Mapping.  If not, test III is performed: the client sends
    a Binding Request to the alternate address and port.  If the XOR-
-   MAPPED-ADDRESS matches test II, the NAT currently has Address-
+   MAPPED-ADDRESS matches test `II`, the NAT currently has Address-
    Dependent Mapping; if it doesn't match it currently has Address and
    Port-Dependent Mapping.
