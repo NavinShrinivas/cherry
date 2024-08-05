@@ -114,7 +114,7 @@ impl STUNHeader {
             transaction_id: tid,
         };
     }
-    pub fn increment_message_length(&mut self, new_attribute_size: u16){
+    pub fn increment_message_length(&mut self, new_attribute_size: u16) {
         self.message_length += new_attribute_size;
     }
 }

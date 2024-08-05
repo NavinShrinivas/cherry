@@ -18,12 +18,12 @@ pub struct STUNError {
 }
 
 impl STUNError {
-    pub fn new(step: STUNStep, err_type: STUNErrorType, message: String) -> Self{
-        return STUNError{
-            step, 
-            error_type: err_type, 
-            message
-        }
+    pub fn new(step: STUNStep, err_type: STUNErrorType, message: String) -> Self {
+        return STUNError {
+            step,
+            error_type: err_type,
+            message,
+        };
     }
     fn get_stun_error_step(s: Self) -> STUNStep {
         return s.step;

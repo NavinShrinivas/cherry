@@ -1,7 +1,7 @@
 use crate::STUNError::error::{STUNError, STUNErrorType, STUNStep};
 use crate::STUNHeader::header::STUNHeader;
 use crate::STUNSerde::encode::STUNEncode;
-use byteorder::{NetworkEndian,WriteBytesExt};
+use byteorder::{NetworkEndian, WriteBytesExt};
 use std::io::{Cursor, Write};
 
 impl STUNEncode for STUNHeader {
@@ -9,8 +9,8 @@ impl STUNEncode for STUNHeader {
         let bin: Vec<u8> = Vec::new();
         let mut header_cursor = Cursor::new(bin);
         let message_type = self.message_class as u16 | self.message_method as u16;
-        let message_len = self.message_length; 
-        let magic_num = self.magic_number; 
+        let message_len = self.message_length;
+        let magic_num = self.magic_number;
         let trasaction_id = self.transaction_id;
 
         match header_cursor.write_u16::<NetworkEndian>(message_type) {
@@ -19,20 +19,20 @@ impl STUNEncode for STUNHeader {
                 return Err(STUNError::new(
                     STUNStep::STUNEncode,
                     STUNErrorType::WriteError,
-                    e.to_string() + "Error writing message type to binary format while encoding STUNHeader.",
+                    e.to_string()
+                        + "Error writing message type to binary format while encoding STUNHeader.",
                 ))
             }
         }
 
         match header_cursor.write_u16::<NetworkEndian>(message_len) {
             Ok(_) => {}
-            Err(e) => {
-                return Err(STUNError::new(
-                    STUNStep::STUNEncode,
-                    STUNErrorType::WriteError,
-                    e.to_string() + "Error writing message length to binary format while encoding STUNHeader.",
-                ))
-            }
+            Err(e) => return Err(STUNError::new(
+                STUNStep::STUNEncode,
+                STUNErrorType::WriteError,
+                e.to_string()
+                    + "Error writing message length to binary format while encoding STUNHeader.",
+            )),
         }
 
         match header_cursor.write_u32::<NetworkEndian>(magic_num) {
@@ -41,29 +41,28 @@ impl STUNEncode for STUNHeader {
                 return Err(STUNError::new(
                     STUNStep::STUNEncode,
                     STUNErrorType::WriteError,
-                    e.to_string() + "Error writing magic number to binary format while encoding STUNHeader.",
+                    e.to_string()
+                        + "Error writing magic number to binary format while encoding STUNHeader.",
                 ))
             }
         }
 
-        match header_cursor.write_all(trasaction_id.as_ref()){
+        match header_cursor.write_all(trasaction_id.as_ref()) {
             Ok(_) => {}
-            Err(e) => {
-                return Err(STUNError::new(
-                    STUNStep::STUNEncode,
-                    STUNErrorType::WriteError,
-                    e.to_string() + "Error writing message length to binary format while encoding STUNHeader.",
-                ))
-            }
+            Err(e) => return Err(STUNError::new(
+                STUNStep::STUNEncode,
+                STUNErrorType::WriteError,
+                e.to_string()
+                    + "Error writing message length to binary format while encoding STUNHeader.",
+            )),
         }
-
 
         return Ok(header_cursor.get_ref().to_vec());
     }
 }
 
 /*
-*       Examples : 
+*       Examples :
 *        00 01 00 58 -> 0000_0000_0000_0001 0000_000_0101_1000 | [binding, request][messsage_length: 88 bytes]
          21 12 a4 42 -> MAGIC_NUMBER
          b7 e7 a7 01 |
