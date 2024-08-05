@@ -1,5 +1,6 @@
 use crate::STUNError::error::STUNError;
+use std::io::Cursor;
 
 pub trait STUNDecode {
-    fn decode(&self) -> Result<Vec<u8>, STUNError>;
+    fn decode<S: Sized>(cursor: &mut Cursor<&[u8]>) -> Result<S, STUNError>;
 }
