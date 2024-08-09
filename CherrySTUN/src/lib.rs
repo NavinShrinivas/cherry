@@ -3,6 +3,9 @@ mod STUNHeader;
 mod STUNSerde;
 mod TestFixtures;
 
+#[macro_use]
+extern crate num_derive;
+
 pub fn add(left: usize, right: usize) -> usize {
     left + right
 }

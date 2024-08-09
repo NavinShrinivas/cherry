@@ -4,10 +4,14 @@ pub enum STUNStep {
     STUNDecode,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum STUNErrorType {
     ReadError,
     WriteError,
+    MagicCookieMistmatchError,
+    WrongSizeError,
+    InvalidClassError, 
+    InvalidMethodError,
 }
 
 #[derive(Debug)]

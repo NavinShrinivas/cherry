@@ -47,7 +47,8 @@ use rand::prelude::*;
 *
 *
 * */
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(FromPrimitive)]
 pub enum STUNMessageClass {
     //First two bits are the fixed bits `00`
     Request = 0b0000_0000_0000_0000,
@@ -56,7 +57,8 @@ pub enum STUNMessageClass {
     ResponseError = 0b0000_0001_0001_0000,
 }
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(FromPrimitive)]
 pub enum STUNMessageMethod {
     Binding = 0b0000_0000_0000_0001,
 }
@@ -83,7 +85,7 @@ pub const STUN_5389_MAGIC_NUMBER_U32: u32 = 0x2112A442;
   always zero.  This provides another way to distinguish STUN packets
   from packets of other protocols.
 * */
-
+#[derive(Debug, PartialEq)]
 pub struct STUNHeader {
     pub message_class: STUNMessageClass,
     pub message_method: STUNMessageMethod,

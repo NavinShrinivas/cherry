@@ -111,6 +111,7 @@ mod test {
     #[test]
     fn test_stun_header_decode() {
         //We create a header struct and check if the decode matches the fixtures
+        //test are run in parallel and should be thread safe. They cannot not duplicate the initialization code. Hence these inits need to be duplicated over tests
         let mut stun_indication_binding_header = STUNHeader::new(
             STUNMessageClass::Indication,
             STUNMessageMethod::Binding,
