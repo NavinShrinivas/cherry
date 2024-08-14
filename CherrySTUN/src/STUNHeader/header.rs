@@ -47,8 +47,7 @@ use rand::prelude::*;
 *
 *
 * */
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-#[derive(FromPrimitive)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, FromPrimitive)]
 pub enum STUNMessageClass {
     //First two bits are the fixed bits `00`
     Request = 0b0000_0000_0000_0000,
@@ -57,8 +56,7 @@ pub enum STUNMessageClass {
     ResponseError = 0b0000_0001_0001_0000,
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-#[derive(FromPrimitive)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, FromPrimitive)]
 pub enum STUNMessageMethod {
     Binding = 0b0000_0000_0000_0001,
 }

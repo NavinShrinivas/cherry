@@ -7,10 +7,16 @@
 - test vectors for STUN requests : https://datatracker.ietf.org/doc/html/rfc5769
 
 ## Reference projects : 
+
 - https://github.com/Vagr9K/rust-stun-coder/tree/master
 - https://github.com/sile/stun_codec
 
+## Useful tools for development : 
+
+- Hex converter : https://www.scadacore.com/tools/programming-calculators/online-hex-converter/
+
 ### NAT testing : 
+
    This will require at most three tests.  In test `I`, the client
    performs the UDP connectivity test.  The server will return its
    alternate address and port in OTHER-ADDRESS in the binding response.

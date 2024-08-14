@@ -1,8 +1,8 @@
+mod STUNBody;
 mod STUNError;
 mod STUNHeader;
 mod STUNSerde;
 mod TestFixtures;
-mod STUNBody;
 
 #[macro_use]
 extern crate num_derive;

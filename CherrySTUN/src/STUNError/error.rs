@@ -10,8 +10,9 @@ pub enum STUNErrorType {
     WriteError,
     MagicCookieMistmatchError,
     WrongSizeError,
-    InvalidClassError, 
+    InvalidClassError,
     InvalidMethodError,
+    AttributeTypeMismatch,
 }
 
 #[derive(Debug)]
