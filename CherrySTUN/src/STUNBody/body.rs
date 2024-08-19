@@ -48,7 +48,7 @@
 *
 * */
 
-use crate::STUNBody::attributes::STUNAttributesContent;
+use crate::STUNBody::attributes::attributes::STUNAttributesContent;
 
 pub struct STUNAttributes {
     length: u16,
