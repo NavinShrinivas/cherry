@@ -13,6 +13,8 @@ pub enum STUNErrorType {
     InvalidClassError,
     InvalidMethodError,
     AttributeTypeMismatch,
+    AttributeStructureMismatch, //When the expected structure is found
+    InternalError, //When a call to a non public function goes wrong
 }
 
 #[derive(Debug)]
