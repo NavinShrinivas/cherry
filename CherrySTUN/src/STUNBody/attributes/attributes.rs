@@ -1,5 +1,7 @@
 use std::net::SocketAddr;
 
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, FromPrimitive)]
 pub enum STUNAttributeType {
     MappedAddress = 0x0001,
     Username = 0x0006,

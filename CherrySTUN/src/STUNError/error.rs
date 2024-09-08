@@ -15,6 +15,7 @@ pub enum STUNErrorType {
     AttributeTypeMismatch,
     AttributeStructureMismatch, //When the expected structure is found
     InternalError, //When a call to a non public function goes wrong
+    InvalidOrUnsupportedAttribute,
 }
 
 #[derive(Debug)]

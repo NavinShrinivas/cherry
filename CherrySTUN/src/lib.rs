@@ -1,7 +1,7 @@
-mod STUNBody;
-mod STUNError;
-mod STUNHeader;
-mod STUNSerde;
+pub mod STUNBody;
+pub mod STUNError;
+pub mod STUNHeader;
+pub mod STUNSerde; //Interface for encode/decode for STUN
 mod TestFixtures;
 
 #[macro_use]

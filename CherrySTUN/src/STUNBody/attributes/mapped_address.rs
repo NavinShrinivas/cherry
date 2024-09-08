@@ -6,9 +6,17 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 
 
 impl STUNAttributesContent {
-    //Contain decode functions specific to each attribute type content
-    //Start with mapped address, XOR mapped address, Fingerprint, Message Integrity
-    fn encode_mapped_address(&self) -> Result<Vec<u8>, STUNError> {
+    pub fn new_mapped_address(address: SocketAddr) -> Self{
+        Self::MappedAddress{
+            address
+        }
+    }
+
+
+    //Input to these function arent going to be 
+    //from the library user, it is going to be fed data from 
+    //orchestrator/drive for STUNBody
+    pub fn encode_mapped_address(&self) -> Result<Vec<u8>, STUNError> {
         match self {
             Self::MappedAddress { address } => {
                 let bin: Vec<u8> = Vec::new();
@@ -115,7 +123,6 @@ impl STUNAttributesContent {
         };
     }
 
-    //private function
     fn decode_ip_addr_port(cursor: &mut Cursor<&[u8]>, family: u32) -> Result<SocketAddr, STUNError>{
         //1 for ipv4 
         //2 for ipv6 
@@ -175,7 +182,7 @@ impl STUNAttributesContent {
 
     }
 
-    fn decode_mapped_address(cursor: &mut Cursor<&[u8]>) -> Result<Self, STUNError>{
+    pub fn decode_mapped_address(cursor: &mut Cursor<&[u8]>) -> Result<Self, STUNError>{
         match cursor.read_u8(){
             Ok(bin) => {
                 if bin!=0b0000_0000{

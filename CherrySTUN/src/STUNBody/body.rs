@@ -48,10 +48,12 @@
 *
 * */
 
+use crate::STUNBody::attributes::attributes::STUNAttributeType;
 use crate::STUNBody::attributes::attributes::STUNAttributesContent;
 
 pub struct STUNAttributes {
-    length: u16,
+    length: u16, //len in equvivalent bin rep
+    attribute_type: STUNAttributeType,
     value: STUNAttributesContent, //Contains mapping to type
 }
 
@@ -64,4 +66,21 @@ impl STUNBody {
     //Also means we need to provide some way to build the attributes
     //And also being able to add MESSAGE-INTEGRITY and FINGERPRINT based on current body
     //And some way to block addition of attributes after MESSAGE-INTEGRITY and FINGERPRINT?
+    pub fn new() -> Self {
+        STUNBody {
+            attributes: Vec::new(),
+        }
+    }
+    pub fn add_new_attribute(
+        &mut self,
+        new_attribute: STUNAttributesContent,
+        attribute_type: STUNAttributeType,
+        bin_len: u16,
+    ) {
+        self.attributes.push(STUNAttributes {
+            length: bin_len,
+            attribute_type,
+            value: new_attribute,
+        });
+    }
 }
