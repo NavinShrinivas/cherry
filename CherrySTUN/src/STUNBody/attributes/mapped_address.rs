@@ -115,7 +115,7 @@ impl STUNAttributesContent {
         };
     }
 
-    //pvt function
+    //private function
     fn decode_ip_addr_port(cursor: &mut Cursor<&[u8]>, family: u32) -> Result<SocketAddr, STUNError>{
         //1 for ipv4 
         //2 for ipv6 
