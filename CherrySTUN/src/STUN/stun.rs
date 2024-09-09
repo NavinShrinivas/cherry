@@ -1,0 +1,6 @@
+use crate::STUNHeader::header::STUNHeader; 
+use crate::STUNBody::body::STUNBody;
+struct STUN{
+   header: STUNHeader, 
+   body: STUNBody,
+}

@@ -8,7 +8,6 @@ impl STUNAttributesContent {
     pub fn new_mapped_address(address: SocketAddr) -> Self {
         Self::MappedAddress { address }
     }
-
     //Input to these function arent going to be
     //from the library user, it is going to be fed data from
     //orchestrator/drive for STUNBody
@@ -245,7 +244,6 @@ impl STUNAttributesContent {
     }
 }
 
-//[TODO next]: write test for normally mapped addresses
 #[cfg(test)]
 mod test {
     use super::*;
