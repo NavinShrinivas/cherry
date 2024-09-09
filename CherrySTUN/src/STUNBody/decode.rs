@@ -75,22 +75,32 @@ impl STUNDecode for STUNBody {
 mod test {
     use super::*;
     use crate::TestFixtures::fixtures::*;
+    use std::net::{IpAddr, Ipv4Addr, SocketAddr};
     fn roll_cursor_on_fixture(fixture_bin: &[u8]) -> Cursor<&[u8]> {
         return Cursor::new(fixture_bin);
     }
 
     #[test]
     fn stun_body_success_test() -> Result<(), String> {
-        let response = STUNBody::decode(&mut roll_cursor_on_fixture(
-            &STUN_RESPONSE_BODY_TEST,
-        ));
+        let response = STUNBody::decode(&mut roll_cursor_on_fixture(&STUN_RESPONSE_BODY_TEST));
         match response {
-            Ok(_) => {
-                return Ok(())
+            Ok(resp) => {
+                assert_eq!(resp.attributes.get(0).unwrap().length, 8 as u16);
+                assert_eq!(
+                    resp.attributes.get(0).unwrap().attribute_type,
+                    STUNAttributeType::MappedAddress
+                );
+                assert_eq!(
+                    resp.attributes.get(0).unwrap().value,
+                    STUNAttributesContent::MappedAddress {
+                        address: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(192, 0, 2, 1)), 32853)
+                    }
+                );
+                return Ok(());
             }
             Err(e) => {
                 return Err(String::from(
-                    "Unexpected failure on decoding stun body".to_string() + e.message.as_str()
+                    "Unexpected failure on decoding stun body".to_string() + e.message.as_str(),
                 ));
             }
         };
@@ -98,9 +108,7 @@ mod test {
 
     #[test]
     fn stun_body_failure_test() -> Result<(), String> {
-        let response = STUNBody::decode(&mut roll_cursor_on_fixture(
-            &STUN_RESPONSE_BODY_FAIL_TEST,
-        ));
+        let response = STUNBody::decode(&mut roll_cursor_on_fixture(&STUN_RESPONSE_BODY_FAIL_TEST));
         match response {
             Ok(_) => {
                 return Err(String::from(
@@ -108,7 +116,7 @@ mod test {
                 ));
             }
             Err(e) => {
-                if e.error_type == STUNErrorType::InvalidOrUnsupportedAttribute{
+                if e.error_type == STUNErrorType::InvalidOrUnsupportedAttribute {
                     return Ok(());
                 } else {
                     return Err("Wrong error type, received.".to_string());

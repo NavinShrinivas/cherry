@@ -1,7 +1,6 @@
 use std::net::SocketAddr;
 
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq, FromPrimitive)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, FromPrimitive)]
 pub enum STUNAttributeType {
     MappedAddress = 0x0001,
     Username = 0x0006,
@@ -13,13 +12,14 @@ pub enum STUNAttributeType {
     XORMappedAddress = 0x0020, //Mostly used
 }
 
+#[derive(Debug, PartialOrd, Ord, PartialEq, Eq)]
 pub enum STUNAttributesContent {
     MappedAddress { address: SocketAddr },
     XORMappedAddress { address: SocketAddr },
 }
 
 impl STUNAttributesContent {
-    pub fn atrribute_type(&self) -> STUNAttributeType {
+    pub fn attribute_type(&self) -> STUNAttributeType {
         match self {
             STUNAttributesContent::MappedAddress { .. } => {
                 return STUNAttributeType::MappedAddress;

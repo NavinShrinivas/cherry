@@ -1,20 +1,16 @@
 use super::attributes::STUNAttributesContent;
 use crate::STUNError::error::{STUNError, STUNErrorType, STUNStep};
-use byteorder::{NetworkEndian, WriteBytesExt, ReadBytesExt};
-use std::io::{Cursor, Write, Read};
+use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
+use std::io::{Cursor, Read, Write};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 
-
 impl STUNAttributesContent {
-    pub fn new_mapped_address(address: SocketAddr) -> Self{
-        Self::MappedAddress{
-            address
-        }
+    pub fn new_mapped_address(address: SocketAddr) -> Self {
+        Self::MappedAddress { address }
     }
 
-
-    //Input to these function arent going to be 
-    //from the library user, it is going to be fed data from 
+    //Input to these function arent going to be
+    //from the library user, it is going to be fed data from
     //orchestrator/drive for STUNBody
     pub fn encode_mapped_address(&self) -> Result<Vec<u8>, STUNError> {
         match self {
@@ -33,7 +29,7 @@ impl STUNAttributesContent {
                     }
                 }
                 let port = u16::from(address.port());
-                println!("{}",port);
+                println!("{}", port);
                 match address {
                     std::net::SocketAddr::V4(ipv4add) => {
                         match header_cursor.write_u8(0x0000_0001){
@@ -123,137 +119,143 @@ impl STUNAttributesContent {
         };
     }
 
-    fn decode_ip_addr_port(cursor: &mut Cursor<&[u8]>, family: u32) -> Result<SocketAddr, STUNError>{
-        //1 for ipv4 
-        //2 for ipv6 
+    fn decode_ip_addr_port(
+        cursor: &mut Cursor<&[u8]>,
+        family: u32,
+    ) -> Result<SocketAddr, STUNError> {
+        //1 for ipv4
+        //2 for ipv6
         let port = match cursor.read_u16::<NetworkEndian>() {
-            Ok(bin) => {
-                bin
-            },
+            Ok(bin) => bin,
             Err(e) => {
-                return Err(STUNError{
+                return Err(STUNError {
                     step: STUNStep::STUNDecode,
                     error_type: STUNErrorType::ReadError,
-                    message: "Error decoding mapped address. Error reading port".to_string() + e.to_string().as_str()
+                    message: "Error decoding mapped address. Error reading port".to_string()
+                        + e.to_string().as_str(),
                 });
             }
         };
-        if family == 1{
+        if family == 1 {
             //1 is ipv4
-            let ip4_addr_u32_bin = match cursor.read_u32::<NetworkEndian>(){
-                Ok(bin) => {
-                    bin
-                },
+            let ip4_addr_u32_bin = match cursor.read_u32::<NetworkEndian>() {
+                Ok(bin) => bin,
                 Err(e) => {
-                    return Err(STUNError{
+                    return Err(STUNError {
                         step: STUNStep::STUNDecode,
                         error_type: STUNErrorType::ReadError,
-                        message: "Error decoding mapped address. Error reading ipv4 addr".to_string() + e.to_string().as_str()
+                        message: "Error decoding mapped address. Error reading ipv4 addr"
+                            .to_string()
+                            + e.to_string().as_str(),
                     });
                 }
             };
             let ip4_addr_obj = Ipv4Addr::from(ip4_addr_u32_bin.to_be_bytes());
             return Ok(SocketAddr::new(IpAddr::V4(ip4_addr_obj), port));
-        }else if family == 2{
+        } else if family == 2 {
             //2 is ipv6
-            let ip6_addr_u128_bin = match cursor.read_u128::<NetworkEndian>(){
-                Ok(bin) => {
-                    bin
-                },
+            let ip6_addr_u128_bin = match cursor.read_u128::<NetworkEndian>() {
+                Ok(bin) => bin,
                 Err(e) => {
-                    return Err(STUNError{
+                    return Err(STUNError {
                         step: STUNStep::STUNDecode,
                         error_type: STUNErrorType::ReadError,
-                        message: "Error decoding mapped address. Error reading ipv6 addr".to_string() + e.to_string().as_str()
+                        message: "Error decoding mapped address. Error reading ipv6 addr"
+                            .to_string()
+                            + e.to_string().as_str(),
                     });
                 }
             };
             let ip6_addr_obj = Ipv6Addr::from(ip6_addr_u128_bin.to_be_bytes());
             return Ok(SocketAddr::new(IpAddr::V6(ip6_addr_obj), port));
-        }else{
+        } else {
             return Err({
-                STUNError{
-                    step: STUNStep::STUNDecode, 
+                STUNError {
+                    step: STUNStep::STUNDecode,
                     error_type: STUNErrorType::InternalError,
-                    message: "Internal error, Called function with invalid faimly type".to_string()
+                    message: "Internal error, Called function with invalid faimly type".to_string(),
                 }
-            })
+            });
         }
-
     }
 
-    pub fn decode_mapped_address(cursor: &mut Cursor<&[u8]>) -> Result<Self, STUNError>{
-        match cursor.read_u8(){
+    pub fn decode_mapped_address(cursor: &mut Cursor<&[u8]>) -> Result<Self, STUNError> {
+        match cursor.read_u8() {
             Ok(bin) => {
-                if bin!=0b0000_0000{
-                    return Err(STUNError{
+                if bin != 0b0000_0000 {
+                    return Err(STUNError {
                         step: STUNStep::STUNDecode,
                         error_type: STUNErrorType::AttributeStructureMismatch,
-                        message: "Did not find required 0b0000_0000 when trying to decode mapped address".to_string(),
+                        message:
+                            "Did not find required 0b0000_0000 when trying to decode mapped address"
+                                .to_string(),
                     });
                 }
             }
             Err(e) => {
-                return Err(STUNError{
+                return Err(STUNError {
                     step: STUNStep::STUNDecode,
                     error_type: STUNErrorType::ReadError,
-                    message: "Error decoding mapped address".to_string() + e.to_string().as_str()
+                    message: "Error decoding mapped address".to_string() + e.to_string().as_str(),
                 });
             }
         };
-        match cursor.read_u8(){
+        match cursor.read_u8() {
             Ok(bin) => {
-                //Family 
-                if bin == 0b0000_0001{
-                    match Self::decode_ip_addr_port(cursor, 1){
+                //Family
+                if bin == 0b0000_0001 {
+                    match Self::decode_ip_addr_port(cursor, 1) {
                         Ok(socker_addr) => {
-                            return Ok(Self::MappedAddress{address : socker_addr});
+                            return Ok(Self::MappedAddress {
+                                address: socker_addr,
+                            });
                         }
-                        Err(e) =>{
+                        Err(e) => {
                             return Err(e);
                         }
                     };
-                }else if bin == 0b0000_0010{
-                    match Self::decode_ip_addr_port(cursor, 2){
+                } else if bin == 0b0000_0010 {
+                    match Self::decode_ip_addr_port(cursor, 2) {
                         Ok(socker_addr) => {
-                            return Ok(Self::MappedAddress{address : socker_addr});
+                            return Ok(Self::MappedAddress {
+                                address: socker_addr,
+                            });
                         }
-                        Err(e) =>{
+                        Err(e) => {
                             return Err(e);
                         }
                     };
-                }else{
+                } else {
                     return Err(STUNError{
                         step: STUNStep::STUNDecode,
                         error_type: STUNErrorType::AttributeStructureMismatch,
                         message: "Did not find required a valid ip address family type when trying to decode mapped address".to_string(),
                     });
                 }
-            },
+            }
             Err(e) => {
-                return Err(STUNError{
+                return Err(STUNError {
                     step: STUNStep::STUNDecode,
                     error_type: STUNErrorType::ReadError,
-                    message: "Error decoding mapped address".to_string() + e.to_string().as_str()
+                    message: "Error decoding mapped address".to_string() + e.to_string().as_str(),
                 });
             }
         }
         // Ok(())
     }
-    
 }
 
 //[TODO next]: write test for normally mapped addresses
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::STUNBody::test_const::*;
+    use crate::TestFixtures::fixtures::STUN_ATTRIBUTE_IPV4_MAPPED_ADDRESS_BIN;
     #[test]
     fn mapped_address_valid_test_encode() {
         let mapped_addr = STUNAttributesContent::MappedAddress {
             address: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(192, 0, 2, 1)), 32853),
         };
-        match mapped_addr.encode_mapped_address(){
+        match mapped_addr.encode_mapped_address() {
             Ok(bin) => {
                 assert_eq!(&bin[..], STUN_ATTRIBUTE_IPV4_MAPPED_ADDRESS_BIN)
             }
@@ -265,8 +267,5 @@ mod test {
         return;
     }
 
-
-    fn mapped_address_valid_test_decode() {
-
-    }
+    fn mapped_address_valid_test_decode() {}
 }

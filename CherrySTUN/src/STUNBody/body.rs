@@ -51,10 +51,11 @@
 use crate::STUNBody::attributes::attributes::STUNAttributeType;
 use crate::STUNBody::attributes::attributes::STUNAttributesContent;
 
+#[derive(Eq, PartialEq, PartialOrd, Ord)]
 pub struct STUNAttributes {
-    length: u16, //len in equvivalent bin rep
-    attribute_type: STUNAttributeType,
-    value: STUNAttributesContent, //Contains mapping to type
+    pub length: u16, //len in equvivalent bin rep
+    pub attribute_type: STUNAttributeType,
+    pub value: STUNAttributesContent, //Contains mapping to type
 }
 
 pub struct STUNBody {
