@@ -16,7 +16,7 @@ impl STUNDecode for STUNBody {
         //All the way till the end will be attrs
         let mut new_body = STUNBody::new();
         loop {
-            let attribute = match cursor.read_u16::<NetworkEndian>() {
+            let attribute_type = match cursor.read_u16::<NetworkEndian>() {
                 Ok(bin) => bin,
                 Err(e) => {
                     match e.kind() {
@@ -48,7 +48,7 @@ impl STUNDecode for STUNBody {
                 }
             };
 
-            match num::FromPrimitive::from_u16(attribute) {
+            match num::FromPrimitive::from_u16(attribute_type) {
                 Some(STUNAttributeType::MappedAddress) => {
                     let attr_content = match STUNAttributesContent::decode_mapped_address(cursor) {
                         Ok(content) => content,
@@ -115,7 +115,7 @@ mod test {
     }
 
     #[test]
-    fn stun_body_success_test() -> Result<(), String> {
+    fn stun_body_decode_success_test() -> Result<(), String> {
         let mut response_cursor = &mut roll_cursor_on_fixture(&STUN_RESPONSE_BODY_TEST);
         response_cursor.set_position(STUN_HEADER_ENDING_POSITION as u64); //20 is the end of headers
         let response = STUNBody::decode(&mut response_cursor);
@@ -160,7 +160,7 @@ mod test {
     }
 
     #[test]
-    fn stun_body_failure_test() -> Result<(), String> {
+    fn stun_body_decode_failure_test() -> Result<(), String> {
         let response = STUNBody::decode(&mut roll_cursor_on_fixture(&STUN_RESPONSE_BODY_FAIL_TEST));
         match response {
             Ok(_) => {

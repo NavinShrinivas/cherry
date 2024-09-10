@@ -42,7 +42,7 @@
   padding bits are ignored, and may be any value.
 
   ================================MORE INFO=================================
-  To learn more about these atrributes look into :
+  To learn more about these attribute look into :
   https://datatracker.ietf.org/doc/html/rfc5389#section-15
 *
 *
@@ -50,10 +50,14 @@
 
 use crate::STUNBody::attributes::attributes::STUNAttributeType;
 use crate::STUNBody::attributes::attributes::STUNAttributesContent;
+use crate::STUNError::error::{STUNError, STUNErrorType, STUNStep};
+use byteorder::{NetworkEndian, WriteBytesExt};
+use std::io::Cursor;
 
 #[derive(Eq, PartialEq, PartialOrd, Ord)]
 pub struct STUNAttributes {
-    pub length: u16, //len in equvivalent bin rep
+    pub length: u16, //len in equal bin rep, only filled by the decode function. Not expected to be
+    //filled by user.
     pub attribute_type: STUNAttributeType,
     pub value: STUNAttributesContent, //Contains mapping to type
 }
@@ -83,5 +87,39 @@ impl STUNBody {
             attribute_type,
             value: new_attribute,
         });
+    }
+
+    ///To be called from encode flows
+    pub fn write_attribute_header_encode(
+        content_body: &[u8],
+        write_cursor: &mut Cursor<&mut Vec<u8>>,
+        attribute_type: STUNAttributeType,
+    ) -> Result<(), STUNError> {
+        //We can write header, only after we know the `size` of the attribute content
+        match write_cursor.write_u16::<NetworkEndian>(attribute_type as u16) {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(STUNError {
+                    step: STUNStep::STUNDecode,
+                    error_type: STUNErrorType::WriteError,
+                    message: e.to_string()
+                        + ". Error writing header attribute type when trying to encode.",
+                })
+            }
+        }
+
+        match write_cursor.write_u16::<NetworkEndian>(content_body.len() as u16) {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(STUNError {
+                    step: STUNStep::STUNDecode,
+                    error_type: STUNErrorType::WriteError,
+                    message: e.to_string()
+                        + ". Error writing header attribute type when trying to encode.",
+                })
+            }
+        }
+
+        return Ok(());
     }
 }

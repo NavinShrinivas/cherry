@@ -34,7 +34,7 @@ use super::attributes::STUNAttributesContent;
 use crate::STUNError::error::{STUNError, STUNErrorType, STUNStep};
 use crate::STUNHeader::header::STUN_5389_MAGIC_NUMBER_U32;
 use byteorder;
-use byteorder::{NetworkEndian, ReadBytesExt};
+use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::io::Cursor;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 
@@ -42,7 +42,7 @@ pub const STUN_5389_MAGIC_NUMBER_16MSB_U16: u16 = 0x2112;
 
 impl STUNAttributesContent {
     fn xorObsfucationDeObsfucation_SocketAdrr(
-        address: SocketAddr,
+        address: &SocketAddr,
         transaction_id: [u8; 12],
     ) -> Result<SocketAddr, STUNError> {
         //We are assuming the host byte order is same as network byte order
@@ -90,9 +90,118 @@ impl STUNAttributesContent {
     //Input to these function arent going to be
     //from the library user, it is going to be fed data from
     //orchestrator/drive for STUNBody
-    //[TODO]
-    // pub fn encode_xor_mapped_address(&self) -> Result<Vec<u8>, STUNError> {
-    // }
+    pub fn encode_xor_mapped_address(
+        &self,
+        transaction_id: [u8; 12],
+    ) -> Result<Vec<u8>, STUNError> {
+        match self {
+            Self::XORMappedAddress { address } => {
+                let bin: Vec<u8> = Vec::new();
+                let mut header_cursor = Cursor::new(bin);
+                match header_cursor.write_u8(0x0000_0000) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(STUNError {
+                            step: STUNStep::STUNEncode,
+                            error_type: STUNErrorType::WriteError,
+                            message: e.to_string()
+                                + "Error writing padding bits to mapped address.",
+                        })
+                    }
+                }
+                let xoredAddress =
+                    match Self::xorObsfucationDeObsfucation_SocketAdrr(address, transaction_id) {
+                        Ok(sock) => sock,
+                        Err(e) => return Err(e),
+                    };
+                let port = u16::from(xoredAddress.port());
+                match xoredAddress {
+                    std::net::SocketAddr::V4(ipv4add) => {
+                        match header_cursor.write_u8(0x0000_0001){
+                            Ok(_) => {},
+                            Err(e) => {
+                                return Err(
+                                    STUNError{
+                                        step: STUNStep::STUNEncode,
+                                        error_type: STUNErrorType::WriteError,
+                                        message: e.to_string() + "Error writing address type while encoding Mapped Address attribute: "
+                                    }
+                                )
+                            }
+                        }
+
+                        match header_cursor.write_u16::<NetworkEndian>(port) {
+                            Ok(_) => {}
+                            Err(e) => return Err(STUNError {
+                                step: STUNStep::STUNEncode,
+                                error_type: STUNErrorType::WriteError,
+                                message:
+                                    e.to_string() + "Error writing port while encoding Mapped Address attribute: "
+                            }),
+                        }
+
+                        match header_cursor.write_u32::<NetworkEndian>(u32::from_be_bytes(ipv4add.ip().octets())){
+                            Ok(_) => {},
+                            Err(e) => {
+                                return Err(
+                                    STUNError{
+                                        step: STUNStep::STUNEncode,
+                                        error_type: STUNErrorType::WriteError,
+                                        message: e.to_string() + "Error writing address type while encoding Mapped Address attribute."
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    std::net::SocketAddr::V6(ipv6addr) => {
+                        match header_cursor.write_u8(0x0000_0002){
+                            Ok(_) => {},
+                            Err(e) => {
+                                return Err(
+                                    STUNError{
+                                        step: STUNStep::STUNEncode,
+                                        error_type: STUNErrorType::WriteError,
+                                        message: e.to_string() + "Error writing address type while encoding Mapped Address attribute."
+                                    }
+                                )
+                            }
+                        }
+
+                        match header_cursor.write_u16::<NetworkEndian>(port) {
+                            Ok(_) => {}
+                            Err(e) => return Err(STUNError {
+                                step: STUNStep::STUNEncode,
+                                error_type: STUNErrorType::WriteError,
+                                message: e.to_string()
+                                    + "Error writing port while encoding Mapped Address attribute.",
+                            }),
+                        }
+
+                        match header_cursor.write_u128::<NetworkEndian>(u128::from_be_bytes(ipv6addr.ip().octets())){
+                            Ok(_) => {},
+                            Err(e) => {
+                                return Err(
+                                    STUNError{
+                                        step: STUNStep::STUNEncode,
+                                        error_type: STUNErrorType::WriteError,
+                                        message: e.to_string() + "Error writing address type while encoding Mapped Address attribute."
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+                return Ok(header_cursor.get_ref().to_vec());
+            }
+            _ => return Err(STUNError {
+                step: STUNStep::STUNEncode,
+                error_type: STUNErrorType::AttributeTypeMismatch,
+                message:
+                    "Called encode function for XOR Mapped address on non XOR Mapped address type"
+                        .to_string(),
+            }),
+        };
+    }
 
     fn decode_xor_ip_addr_port(
         cursor: &mut Cursor<&[u8]>,
@@ -128,7 +237,7 @@ impl STUNAttributesContent {
             };
             let ip4_addr_obj = Ipv4Addr::from(ip4_addr_u32_bin.to_be_bytes());
             let unobsfucated_addr = match Self::xorObsfucationDeObsfucation_SocketAdrr(
-                SocketAddr::new(IpAddr::V4(ip4_addr_obj), port),
+                &SocketAddr::new(IpAddr::V4(ip4_addr_obj), port),
                 transaction_id,
             ) {
                 Ok(u_a) => u_a,
@@ -153,7 +262,7 @@ impl STUNAttributesContent {
             };
             let ip6_addr_obj = Ipv6Addr::from(ip6_addr_u128_bin.to_be_bytes());
             let unobsfucated_addr = match Self::xorObsfucationDeObsfucation_SocketAdrr(
-                SocketAddr::new(IpAddr::V6(ip6_addr_obj), port),
+                &SocketAddr::new(IpAddr::V6(ip6_addr_obj), port),
                 transaction_id,
             ) {
                 Ok(u_a) => u_a,

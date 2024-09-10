@@ -29,6 +29,12 @@ pub struct STUNError {
     pub message: String,
 }
 
+impl std::fmt::Display for STUNError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?} {:?} {}", self.step, self.error_type, self.message)
+    }
+}
+
 impl STUNError {
     pub fn new(step: STUNStep, err_type: STUNErrorType, message: String) -> Self {
         return STUNError {
