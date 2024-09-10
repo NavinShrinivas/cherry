@@ -345,4 +345,28 @@ impl STUNAttributesContent {
 
 //[TODO]: Write tests similar to mapped address, atleast for encode
 #[cfg(test)]
-mod test {}
+mod test {
+    use super::*;
+    use crate::TestFixtures::fixtures::{ STUN_ATTRIBUTE_IPV6_XOR_MAPPED_ADDRESS_BIN, TEST_TRANSACTION_ID};
+    #[test]
+    fn xor_mapped_address_valid_test_encode() {
+        let xor_mapped_addr = STUNAttributesContent::XORMappedAddress {
+            address: SocketAddr::new(
+                IpAddr::V6(Ipv6Addr::new(
+                    0x2001, 0xdb8, 0x1234, 0x5678, 0x11, 0x2233, 0x4455, 0x6677,
+                )),
+                32853,
+            ),
+        };
+        match xor_mapped_addr.encode_xor_mapped_address(TEST_TRANSACTION_ID) {
+            Ok(bin) => {
+                assert_eq!(&bin[..], STUN_ATTRIBUTE_IPV6_XOR_MAPPED_ADDRESS_BIN)
+            }
+            Err(e) => {
+                println!("{:?}", e);
+                panic!("Found error, unexpected");
+            }
+        }
+        return;
+    }
+}

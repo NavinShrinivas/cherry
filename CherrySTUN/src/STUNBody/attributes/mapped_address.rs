@@ -264,7 +264,4 @@ mod test {
         }
         return;
     }
-
-    //[TODO]
-    // fn mapped_address_valid_test_decode() {}
 }
