@@ -1,79 +1,87 @@
 /*
- *
- * X-Port is computed by taking the mapped port in host byte order,
-   XOR'ing it with the most significant 16 bits of the magic cookie, and
-   then the converting the result to network byte order.  If the IP
-   address family is IPv4, X-Address is computed by taking the mapped IP
-   address in host byte order, XOR'ing it with the magic cookie, and
-   converting the result to network byte order.  If the IP address
-   family is IPv6, X-Address is computed by taking the mapped IP address
-   in host byte order, XOR'ing it with the concatenation of the magic
-   cookie and the 96-bit transaction ID, and converting the result to
-   network byte order.
+*
+* X-Port is computed by taking the mapped port in host byte order,
+  XOR'ing it with the most significant 16 bits of the magic cookie, and
+  then the converting the result to network byte order.  If the IP
+  address family is IPv4, X-Address is computed by taking the mapped IP
+  address in host byte order, XOR'ing it with the magic cookie, and
+  converting the result to network byte order.  If the IP address
+  family is IPv6, X-Address is computed by taking the mapped IP address
+  in host byte order, XOR'ing it with the concatenation of the magic
+  cookie and the 96-bit transaction ID, and converting the result to
+  network byte order.
 
-   The rules for encoding and processing the first 8 bits of the
-   attribute's value, the rules for handling multiple occurrences of the
-   attribute, and the rules for processing address families are the same
-   as for MAPPED-ADDRESS.
+  The rules for encoding and processing the first 8 bits of the
+  attribute's value, the rules for handling multiple occurrences of the
+  attribute, and the rules for processing address families are the same
+  as for MAPPED-ADDRESS.
 
-   Note: XOR-MAPPED-ADDRESS and MAPPED-ADDRESS differ only in their
-   encoding of the transport address.  The former encodes the transport
-   address by exclusive-or'ing it with the magic cookie.  The latter
-   encodes it directly in binary.  RFC 3489 originally specified only
-   MAPPED-ADDRESS.  However, deployment experience found that some NATs
-   rewrite the 32-bit binary payloads containing the NAT's public IP
-   address, such as STUN's MAPPED-ADDRESS attribute, in the well-meaning
-   but misguided attempt at providing a generic ALG function.  Such
-   behavior interferes with the operation of STUN and also causes
-   failure of STUN's message-integrity checking.
- *
- *
- * */
+  Note: XOR-MAPPED-ADDRESS and MAPPED-ADDRESS differ only in their
+  encoding of the transport address.  The former encodes the transport
+  address by exclusive-or'ing it with the magic cookie.  The latter
+  encodes it directly in binary.  RFC 3489 originally specified only
+  MAPPED-ADDRESS.  However, deployment experience found that some NATs
+  rewrite the 32-bit binary payloads containing the NAT's public IP
+  address, such as STUN's MAPPED-ADDRESS attribute, in the well-meaning
+  but misguided attempt at providing a generic ALG function.  Such
+  behavior interferes with the operation of STUN and also causes
+  failure of STUN's message-integrity checking.
+*
+*
+* */
 
 use super::attributes::STUNAttributesContent;
 use crate::STUNError::error::{STUNError, STUNErrorType, STUNStep};
-use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use crate::STUNHeader::header::STUN_5389_MAGIC_NUMBER_U32;
-use std::io::{Cursor, Read, Write};
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use byteorder;
+use byteorder::{NetworkEndian, ReadBytesExt};
+use std::io::Cursor;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 
 pub const STUN_5389_MAGIC_NUMBER_16MSB_U16: u16 = 0x2112;
 
 impl STUNAttributesContent {
-
-    fn xorObsfucationDeObsfucation_SocketAdrr(address: SocketAddr, transaction_id: [u8;12]) -> Result<SocketAddr, STUNError>{
+    fn xorObsfucationDeObsfucation_SocketAdrr(
+        address: SocketAddr,
+        transaction_id: [u8; 12],
+    ) -> Result<SocketAddr, STUNError> {
         //We are assuming the host byte order is same as network byte order
         let port_bin = u16::from(address.port());
-        let xored_port_bin =  port_bin ^ STUN_5389_MAGIC_NUMBER_16MSB_U16;
-        match address{
+        let xored_port_bin = port_bin ^ STUN_5389_MAGIC_NUMBER_16MSB_U16;
+        match address {
             SocketAddr::V4(ipv4addr) => {
                 let address_bin = u32::from_be_bytes(ipv4addr.ip().octets());
-                let xored_address_bin = address_bin ^  STUN_5389_MAGIC_NUMBER_U32;
-                return Ok(SocketAddr::new(IpAddr::V4(Ipv4Addr::from(xored_address_bin.to_be_bytes())), xored_port_bin));
+                let xored_address_bin = address_bin ^ STUN_5389_MAGIC_NUMBER_U32;
+                return Ok(SocketAddr::new(
+                    IpAddr::V4(Ipv4Addr::from(xored_address_bin.to_be_bytes())),
+                    xored_port_bin,
+                ));
             }
             SocketAddr::V6(ipv6addr) => {
                 let address_bin = u128::from_be_bytes(ipv6addr.ip().octets());
                 let magic_u8_slice = STUN_5389_MAGIC_NUMBER_U32.to_be_bytes();
                 let xorer_u8 = [magic_u8_slice.as_slice(), transaction_id.as_slice()].concat();
-                let ipv6_xorer_function : u128 = match xorer_u8.as_slice().read_u128::<NetworkEndian>(){
-                    Ok(ipv6_xorer) => ipv6_xorer,
-                    Err(e) => {
-                        return Err(STUNError {
-                            step: STUNStep::STUNEncode,
-                            error_type: STUNErrorType::XORObsfucationError,
-                            message: e.to_string()
-                                + "Error computing ipv6 xorer function",
-                        })
-                    }
-                };
+                let ipv6_xorer_function: u128 =
+                    match xorer_u8.as_slice().read_u128::<NetworkEndian>() {
+                        Ok(ipv6_xorer) => ipv6_xorer,
+                        Err(e) => {
+                            return Err(STUNError {
+                                step: STUNStep::STUNEncode,
+                                error_type: STUNErrorType::XORObsfucationError,
+                                message: e.to_string() + "Error computing ipv6 xorer function",
+                            })
+                        }
+                    };
                 let xored_address_bin = address_bin ^ ipv6_xorer_function;
-                return Ok(SocketAddr::new(IpAddr::V6(Ipv6Addr::from(xored_address_bin.to_be_bytes())), xored_port_bin));
+                return Ok(SocketAddr::new(
+                    IpAddr::V6(Ipv6Addr::from(xored_address_bin.to_be_bytes())),
+                    xored_port_bin,
+                ));
             }
         }
     }
 
-    ///Accepts a clean address and puts it in the struct....doesnt't xor it 
+    ///Accepts a clean address and puts it in the struct....doesnt't xor it
     ///xoring isnt done until actually doing network stuff
     pub fn new_xor_mapped_address(address: SocketAddr) -> Self {
         Self::XORMappedAddress { address }
@@ -89,7 +97,7 @@ impl STUNAttributesContent {
     fn decode_xor_ip_addr_port(
         cursor: &mut Cursor<&[u8]>,
         family: u32,
-        transaction_id: [u8;12],
+        transaction_id: [u8; 12],
     ) -> Result<SocketAddr, STUNError> {
         //1 for ipv4
         //2 for ipv6
@@ -119,8 +127,11 @@ impl STUNAttributesContent {
                 }
             };
             let ip4_addr_obj = Ipv4Addr::from(ip4_addr_u32_bin.to_be_bytes());
-            let unobsfucated_addr = match Self::xorObsfucationDeObsfucation_SocketAdrr(SocketAddr::new(IpAddr::V4(ip4_addr_obj), port), transaction_id){
-                Ok(u_a) => {u_a},
+            let unobsfucated_addr = match Self::xorObsfucationDeObsfucation_SocketAdrr(
+                SocketAddr::new(IpAddr::V4(ip4_addr_obj), port),
+                transaction_id,
+            ) {
+                Ok(u_a) => u_a,
                 Err(e) => {
                     return Err(e);
                 }
@@ -141,8 +152,11 @@ impl STUNAttributesContent {
                 }
             };
             let ip6_addr_obj = Ipv6Addr::from(ip6_addr_u128_bin.to_be_bytes());
-            let unobsfucated_addr = match Self::xorObsfucationDeObsfucation_SocketAdrr(SocketAddr::new(IpAddr::V6(ip6_addr_obj), port), transaction_id){
-                Ok(u_a) => {u_a},
+            let unobsfucated_addr = match Self::xorObsfucationDeObsfucation_SocketAdrr(
+                SocketAddr::new(IpAddr::V6(ip6_addr_obj), port),
+                transaction_id,
+            ) {
+                Ok(u_a) => u_a,
                 Err(e) => {
                     return Err(e);
                 }
@@ -159,7 +173,10 @@ impl STUNAttributesContent {
         }
     }
 
-    pub fn decode_xor_mapped_address(cursor: &mut Cursor<&[u8]>, transaction_id: [u8;12]) -> Result<Self, STUNError> {
+    pub fn decode_xor_mapped_address(
+        cursor: &mut Cursor<&[u8]>,
+        transaction_id: [u8; 12],
+    ) -> Result<Self, STUNError> {
         match cursor.read_u8() {
             Ok(_) => {
                 //first 8 bits can be anything
@@ -219,5 +236,4 @@ impl STUNAttributesContent {
 
 //[TODO]: Write tests similar to mapped address, atleast for encode
 #[cfg(test)]
-mod test {
-}
+mod test {}

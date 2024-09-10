@@ -7,7 +7,9 @@ use crate::STUNBody::body::STUNBody;
 use crate::STUNError::error::{STUNError, STUNErrorType, STUNStep};
 use crate::STUNSerde::decode::STUNDecode;
 use byteorder::{NetworkEndian, ReadBytesExt};
-use std::io::{Cursor, ErrorKind, Read, Write};
+use std::io::{Cursor, ErrorKind, Read};
+
+use crate::STUNHeader::header::STUN_HEADER_TRANSACTION_ID_START_POSITION;
 
 impl STUNDecode for STUNBody {
     fn decode(cursor: &mut Cursor<&[u8]>) -> Result<STUNBody, STUNError> {
@@ -62,26 +64,32 @@ impl STUNDecode for STUNBody {
                     //we require transactionID to obsfucate xor mapped address
                     //Hence we do a hack to seeking to start of cursors and getting back
                     let curr_pos = cursor.position();
-                    let mut transaction_id = [0;12];
-                    cursor.set_position(8);
+                    let mut transaction_id = [0; 12];
+                    cursor.set_position(STUN_HEADER_TRANSACTION_ID_START_POSITION as u64);
                     match cursor.read_exact(&mut transaction_id) {
                         Ok(_) => {}
-                        Err(e) => {
-                            return Err(STUNError {
-                                step: STUNStep::STUNDecode,
-                                error_type: STUNErrorType::ReadError,
-                                message: "Error seeking transaction id for xoring with xor mapped address:"
+                        Err(e) => return Err(STUNError {
+                            step: STUNStep::STUNDecode,
+                            error_type: STUNErrorType::ReadError,
+                            message:
+                                "Error seeking transaction id for xoring with xor mapped address:"
                                     .to_string()
                                     + e.to_string().as_str(),
-                            })
-                        }
+                        }),
                     }
                     cursor.set_position(curr_pos);
-                    let attr_content = match STUNAttributesContent::decode_xor_mapped_address(cursor,transaction_id){
+                    let attr_content = match STUNAttributesContent::decode_xor_mapped_address(
+                        cursor,
+                        transaction_id,
+                    ) {
                         Ok(content) => content,
                         Err(e) => return Err(e),
                     };
-                    new_body.add_new_attribute(attr_content, STUNAttributeType::XORMappedAddress, length)
+                    new_body.add_new_attribute(
+                        attr_content,
+                        STUNAttributeType::XORMappedAddress,
+                        length,
+                    )
                 }
                 _ => {
                     return Err(STUNError {
@@ -99,8 +107,9 @@ impl STUNDecode for STUNBody {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::STUNHeader::header::STUN_HEADER_ENDING_POSITION;
     use crate::TestFixtures::fixtures::*;
-    use std::net::{IpAddr, Ipv6Addr, Ipv4Addr, SocketAddr};
+    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
     fn roll_cursor_on_fixture(fixture_bin: &[u8]) -> Cursor<&[u8]> {
         return Cursor::new(fixture_bin);
     }
@@ -108,7 +117,7 @@ mod test {
     #[test]
     fn stun_body_success_test() -> Result<(), String> {
         let mut response_cursor = &mut roll_cursor_on_fixture(&STUN_RESPONSE_BODY_TEST);
-        response_cursor.set_position(20); //20 is the end of headers
+        response_cursor.set_position(STUN_HEADER_ENDING_POSITION as u64); //20 is the end of headers
         let response = STUNBody::decode(&mut response_cursor);
         match response {
             Ok(resp) => {
@@ -132,7 +141,12 @@ mod test {
                 assert_eq!(
                     resp.attributes.get(1).unwrap().value,
                     STUNAttributesContent::XORMappedAddress {
-                        address: SocketAddr::new(IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0x1234, 0x5678, 0x11, 0x2233, 0x4455, 0x6677)), 32853)
+                        address: SocketAddr::new(
+                            IpAddr::V6(Ipv6Addr::new(
+                                0x2001, 0xdb8, 0x1234, 0x5678, 0x11, 0x2233, 0x4455, 0x6677
+                            )),
+                            32853
+                        )
                     }
                 );
                 return Ok(());

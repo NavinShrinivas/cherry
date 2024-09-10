@@ -75,6 +75,8 @@ pub enum STUNMessageMethod {
 * */
 
 pub const STUN_5389_MAGIC_NUMBER_U32: u32 = 0x2112A442;
+pub const STUN_HEADER_TRANSACTION_ID_START_POSITION: u32 = 8;
+pub const STUN_HEADER_ENDING_POSITION: u32 = 20;
 
 /*
 *   The message length MUST contain the size of the message in bytes, not

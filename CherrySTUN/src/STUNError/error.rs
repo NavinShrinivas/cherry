@@ -1,3 +1,6 @@
+#![allow(unused)]
+#![allow(dead_code)]
+
 #[derive(Debug)]
 pub enum STUNStep {
     STUNEncode,
@@ -8,7 +11,7 @@ pub enum STUNStep {
 pub enum STUNErrorType {
     ReadError,
     WriteError,
-    MagicCookieMistmatchError,
+    MagicCookieMismatchError,
     WrongSizeError,
     InvalidClassError,
     InvalidMethodError,

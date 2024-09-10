@@ -1,8 +1,9 @@
+#![allow(non_snake_case)]
+pub mod STUN;
 pub mod STUNBody;
 pub mod STUNError;
 pub mod STUNHeader;
 pub mod STUNSerde; //Interface for encode/decode for STUN
-pub mod STUN;
 mod TestFixtures;
 
 #[macro_use]

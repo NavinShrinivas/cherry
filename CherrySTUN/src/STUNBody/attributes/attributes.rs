@@ -16,7 +16,7 @@ pub enum STUNAttributeType {
 pub enum STUNAttributesContent {
     MappedAddress { address: SocketAddr },
     XORMappedAddress { address: SocketAddr }, //converts the obfuscated bin to socketAddr
-                                                        //and stores it
+                                              //and stores it
 }
 
 impl STUNAttributesContent {

@@ -1,7 +1,7 @@
 use super::attributes::STUNAttributesContent;
 use crate::STUNError::error::{STUNError, STUNErrorType, STUNStep};
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
-use std::io::{Cursor, Read, Write};
+use std::io::Cursor;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 
 impl STUNAttributesContent {
@@ -265,5 +265,6 @@ mod test {
         return;
     }
 
-    fn mapped_address_valid_test_decode() {}
+    //[TODO]
+    // fn mapped_address_valid_test_decode() {}
 }

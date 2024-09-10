@@ -62,7 +62,7 @@ impl STUNDecode for STUNHeader {
                 if bin != STUN_5389_MAGIC_NUMBER_U32 {
                     return Err(STUNError {
                         step: STUNStep::STUNDecode,
-                        error_type: STUNErrorType::MagicCookieMistmatchError,
+                        error_type: STUNErrorType::MagicCookieMismatchError,
                         message: "Magic cookie bits from binary did not match expected."
                             .to_string(),
                     });
@@ -78,8 +78,8 @@ impl STUNDecode for STUNHeader {
             }
         };
 
-        let mut trasaction_id = [0; 12];
-        match cursor.read_exact(&mut trasaction_id) {
+        let mut transaction_id = [0; 12];
+        match cursor.read_exact(&mut transaction_id) {
             Ok(_) => {}
             Err(e) => {
                 if e.kind() == ErrorKind::UnexpectedEof {
@@ -99,7 +99,7 @@ impl STUNDecode for STUNHeader {
                 });
             }
         };
-        let mut header = STUNHeader::new(message_class, message_method, Some(trasaction_id));
+        let mut header = STUNHeader::new(message_class, message_method, Some(transaction_id));
         header.increment_message_length(body_length);
 
         return Ok(header);
@@ -153,7 +153,7 @@ mod test {
                 ));
             }
             Err(e) => {
-                if e.error_type == STUNErrorType::MagicCookieMistmatchError {
+                if e.error_type == STUNErrorType::MagicCookieMismatchError {
                     return Ok(());
                 } else {
                     return Err("Wrong error type, received.".to_string());

@@ -5,27 +5,26 @@ use byteorder::{NetworkEndian, WriteBytesExt};
 use std::io::{Cursor, Write};
 
 impl STUNEncode for STUNHeader {
-    fn encode(&self) -> Result<Vec<u8>, crate::STUNError::error::STUNError> {
-        let bin: Vec<u8> = Vec::new();
-        let mut header_cursor = Cursor::new(bin);
+    fn encode(
+        &self,
+        write_cursor: &mut Cursor<&mut Vec<u8>>,
+    ) -> Result<(), crate::STUNError::error::STUNError> {
         let message_type = self.message_class as u16 | self.message_method as u16;
         let message_len = self.message_length;
         let magic_num = self.magic_number;
-        let trasaction_id = self.transaction_id;
+        let transaction_id = self.transaction_id;
 
-        match header_cursor.write_u16::<NetworkEndian>(message_type) {
+        match write_cursor.write_u16::<NetworkEndian>(message_type) {
             Ok(_) => {}
-            Err(e) => {
-                return Err(STUNError::new(
-                    STUNStep::STUNEncode,
-                    STUNErrorType::WriteError,
-                    e.to_string()
-                        + "Error writing message type to binary format while encoding STUNHeader.",
-                ))
-            }
+            Err(e) => return Err(STUNError::new(
+                STUNStep::STUNEncode,
+                STUNErrorType::WriteError,
+                e.to_string()
+                    + ". Error writing message type to binary format while encoding STUNHeader.",
+            )),
         }
 
-        match header_cursor.write_u16::<NetworkEndian>(message_len) {
+        match write_cursor.write_u16::<NetworkEndian>(message_len) {
             Ok(_) => {}
             Err(e) => return Err(STUNError::new(
                 STUNStep::STUNEncode,
@@ -35,7 +34,7 @@ impl STUNEncode for STUNHeader {
             )),
         }
 
-        match header_cursor.write_u32::<NetworkEndian>(magic_num) {
+        match write_cursor.write_u32::<NetworkEndian>(magic_num) {
             Ok(_) => {}
             Err(e) => {
                 return Err(STUNError::new(
@@ -47,7 +46,7 @@ impl STUNEncode for STUNHeader {
             }
         }
 
-        match header_cursor.write_all(trasaction_id.as_ref()) {
+        match write_cursor.write_all(transaction_id.as_ref()) {
             Ok(_) => {}
             Err(e) => return Err(STUNError::new(
                 STUNStep::STUNEncode,
@@ -57,7 +56,7 @@ impl STUNEncode for STUNHeader {
             )),
         }
 
-        return Ok(header_cursor.get_ref().to_vec());
+        return Ok(());
     }
 }
 
@@ -118,8 +117,13 @@ mod test {
             Some(fixtures::EXAMPLE_STUN_REQUEST_TRANSACTION_ID),
         );
         stun_indication_binding_header.increment_message_length(88);
+        let mut bin: Vec<u8> = Vec::new();
+        let mut write_cursor = Cursor::new(&mut bin);
+        stun_indication_binding_header
+            .encode(&mut write_cursor)
+            .unwrap();
         assert_eq!(
-            stun_indication_binding_header.encode().unwrap(),
+            write_cursor.get_ref().to_vec(),
             fixtures::STUN_INDICATION_BINDING_HEADER_BINARY
         );
 
@@ -129,8 +133,13 @@ mod test {
             Some(fixtures::EXAMPLE_STUN_REQUEST_TRANSACTION_ID),
         );
         stun_request_binding_header.increment_message_length(88);
+        let mut bin: Vec<u8> = Vec::new();
+        let mut write_cursor = Cursor::new(&mut bin);
+        stun_request_binding_header
+            .encode(&mut write_cursor)
+            .unwrap();
         assert_eq!(
-            stun_request_binding_header.encode().unwrap(),
+            write_cursor.get_ref().to_vec(),
             fixtures::STUN_REQUEST_BINDING_HEADER_BINARY
         );
 
@@ -140,8 +149,13 @@ mod test {
             Some(fixtures::EXAMPLE_STUN_REQUEST_TRANSACTION_ID),
         );
         stun_success_binding_response_header.increment_message_length(88);
+        let mut bin: Vec<u8> = Vec::new();
+        let mut write_cursor = Cursor::new(&mut bin);
+        stun_success_binding_response_header
+            .encode(&mut write_cursor)
+            .unwrap();
         assert_eq!(
-            stun_success_binding_response_header.encode().unwrap(),
+            write_cursor.get_ref().to_vec(),
             fixtures::STUN_SUCCESS_BINDING_RESPONSE_HEADER_BINARY
         );
 
@@ -151,8 +165,13 @@ mod test {
             Some(fixtures::EXAMPLE_STUN_REQUEST_TRANSACTION_ID),
         );
         stun_error_binding_response_header.increment_message_length(88);
+        let mut bin: Vec<u8> = Vec::new();
+        let mut write_cursor = Cursor::new(&mut bin);
+        stun_error_binding_response_header
+            .encode(&mut write_cursor)
+            .unwrap();
         assert_eq!(
-            stun_error_binding_response_header.encode().unwrap(),
+            write_cursor.get_ref().to_vec(),
             fixtures::STUN_ERROR_BINDING_RESPONSE_HEADER_BINARY
         );
     }
