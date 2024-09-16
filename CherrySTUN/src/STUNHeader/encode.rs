@@ -1,3 +1,4 @@
+use crate::STUNContext::context::STUNContext;
 use crate::STUNError::error::{STUNError, STUNErrorType, STUNStep};
 use crate::STUNHeader::header::STUNHeader;
 use crate::STUNSerde::encode::STUNEncode;
@@ -8,6 +9,7 @@ impl STUNEncode for STUNHeader {
     fn encode(
         &self,
         write_cursor: &mut Cursor<&mut Vec<u8>>,
+        _: Option<STUNContext>,
     ) -> Result<(), crate::STUNError::error::STUNError> {
         let message_type = self.message_class as u16 | self.message_method as u16;
         let message_len = self.message_length;
@@ -120,7 +122,7 @@ mod test {
         let mut bin: Vec<u8> = Vec::new();
         let mut write_cursor = Cursor::new(&mut bin);
         stun_indication_binding_header
-            .encode(&mut write_cursor)
+            .encode(&mut write_cursor, None)
             .unwrap();
         assert_eq!(
             write_cursor.get_ref().to_vec(),
@@ -136,7 +138,7 @@ mod test {
         let mut bin: Vec<u8> = Vec::new();
         let mut write_cursor = Cursor::new(&mut bin);
         stun_request_binding_header
-            .encode(&mut write_cursor)
+            .encode(&mut write_cursor, None)
             .unwrap();
         assert_eq!(
             write_cursor.get_ref().to_vec(),
@@ -152,7 +154,7 @@ mod test {
         let mut bin: Vec<u8> = Vec::new();
         let mut write_cursor = Cursor::new(&mut bin);
         stun_success_binding_response_header
-            .encode(&mut write_cursor)
+            .encode(&mut write_cursor, None)
             .unwrap();
         assert_eq!(
             write_cursor.get_ref().to_vec(),
@@ -168,7 +170,7 @@ mod test {
         let mut bin: Vec<u8> = Vec::new();
         let mut write_cursor = Cursor::new(&mut bin);
         stun_error_binding_response_header
-            .encode(&mut write_cursor)
+            .encode(&mut write_cursor, None)
             .unwrap();
         assert_eq!(
             write_cursor.get_ref().to_vec(),

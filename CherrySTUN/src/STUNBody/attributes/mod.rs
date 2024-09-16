@@ -4,3 +4,4 @@ pub mod attributes;
 //Only used by STUNBody encode/decode
 mod mapped_address;
 mod xor_mapped_address;
+mod username;

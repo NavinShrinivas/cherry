@@ -1,3 +1,4 @@
+use crate::STUNContext::context::STUNContext;
 use crate::STUNError::error::{STUNError, STUNErrorType, STUNStep};
 use crate::STUNHeader::header::{
     STUNHeader, STUNMessageClass, STUNMessageMethod, STUN_5389_MAGIC_NUMBER_U32,
@@ -7,8 +8,12 @@ use byteorder::{NetworkEndian, ReadBytesExt};
 use std::io::{Cursor, ErrorKind, Read};
 
 impl STUNDecode for STUNHeader {
-    fn decode(cursor: &mut Cursor<&[u8]>) -> Result<STUNHeader, STUNError> {
-        //We assume the cursor posistion is sent to this function from first bit
+    ///decode_context is never filled by the header
+    fn decode(
+        cursor: &mut Cursor<&[u8]>,
+        _: Option<&mut STUNContext>,
+    ) -> Result<STUNHeader, STUNError> {
+        //We assume the cursor position is sent to this function from first bit
         let message_type = match cursor.read_u16::<NetworkEndian>() {
             Ok(bin) => bin,
             Err(e) => {
@@ -122,9 +127,10 @@ mod test {
 
     #[test]
     fn stun_header_decode_wrong_class() -> Result<(), String> {
-        let response = STUNHeader::decode(&mut roll_cursor_on_fixture(
-            &STUN_INCORRECT_METHOD_HEADER_BINARY,
-        ));
+        let response = STUNHeader::decode(
+            &mut roll_cursor_on_fixture(&STUN_INCORRECT_METHOD_HEADER_BINARY),
+            None,
+        );
         match response {
             Ok(_) => {
                 return Err(String::from(
@@ -143,9 +149,10 @@ mod test {
 
     #[test]
     fn stun_header_decode_wrong_magic_number() -> Result<(), String> {
-        let response = STUNHeader::decode(&mut roll_cursor_on_fixture(
-            &STUN_INCORRECT_MAGIC_NUMBER_HEADER_BINARY,
-        ));
+        let response = STUNHeader::decode(
+            &mut roll_cursor_on_fixture(&STUN_INCORRECT_MAGIC_NUMBER_HEADER_BINARY),
+            None,
+        );
         match response {
             Ok(_) => {
                 return Err(String::from(
@@ -164,7 +171,10 @@ mod test {
 
     #[test]
     fn stun_header_decode_smaller_header() -> Result<(), String> {
-        let response = STUNHeader::decode(&mut roll_cursor_on_fixture(&STUN_SMALLER_HEADER_BINARY));
+        let response = STUNHeader::decode(
+            &mut roll_cursor_on_fixture(&STUN_SMALLER_HEADER_BINARY),
+            None,
+        );
         match response {
             Ok(_) => {
                 return Err(String::from(
@@ -184,9 +194,10 @@ mod test {
 
     #[test]
     fn stun_header_decode_binding_request() {
-        let response = STUNHeader::decode(&mut roll_cursor_on_fixture(
-            &STUN_REQUEST_BINDING_HEADER_BINARY,
-        ));
+        let response = STUNHeader::decode(
+            &mut roll_cursor_on_fixture(&STUN_REQUEST_BINDING_HEADER_BINARY),
+            None,
+        );
         match response {
             Ok(header_obj) => {
                 let mut stun_request_binding_header_obj = STUNHeader::new(

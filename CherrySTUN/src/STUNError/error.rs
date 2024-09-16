@@ -20,6 +20,8 @@ pub enum STUNErrorType {
     InternalError,              //When a call to a non public function goes wrong
     InvalidOrUnsupportedAttribute,
     XORObsfucationError,
+    UTF8DecodeError, //Used when we try representing the bin as a utf8 encoded string but is not
+    RequiredContextMissingError,
 }
 
 #[derive(Debug)]

@@ -3,6 +3,7 @@ pub mod STUN;
 pub mod STUNBody;
 pub mod STUNError;
 pub mod STUNHeader;
+pub mod STUNContext;
 pub mod STUNSerde; //Interface for encode/decode for STUN
 mod TestFixtures;
 

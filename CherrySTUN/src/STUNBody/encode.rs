@@ -3,13 +3,14 @@ use crate::STUNBody::body::STUNBody;
 use crate::STUNError::error::{STUNError, STUNErrorType, STUNStep};
 use crate::STUNHeader::header::STUN_HEADER_TRANSACTION_ID_START_POSITION;
 use crate::STUNSerde::encode::STUNEncode;
+use crate::STUNContext::context::STUNContext;
 use std::io::{Read, Write};
 
 #[allow(unreachable_code)]
 #[allow(unreachable_patterns)] //to cover "_" branch incase of new attributes
 
 impl STUNEncode for STUNBody {
-    fn encode(&self, write_cursor: &mut std::io::Cursor<&mut Vec<u8>>) -> Result<(), STUNError> {
+    fn encode(&self, write_cursor: &mut std::io::Cursor<&mut Vec<u8>>, _: Option<STUNContext>) -> Result<(), STUNError> {
         for (_, attribute) in self.attributes.iter().enumerate() {
             match attribute.value {
                 STUNAttributesContent::MappedAddress { .. } => {
@@ -138,7 +139,7 @@ mod test {
             0,
         );
         let answer_bin = STUN_RESPONSE_BODY_TEST.to_vec();
-        match test_body.encode(&mut write_test_cursor) {
+        match test_body.encode(&mut write_test_cursor, None) {
             Ok(_) => {}
             Err(e) => {
                 return Err(e.to_string() + ". Got unexpected error.");
@@ -176,7 +177,7 @@ mod test {
             STUNAttributeType::XORMappedAddress,
             0,
         );
-        match test_body.encode(&mut write_test_cursor) {
+        match test_body.encode(&mut write_test_cursor, None) {
             Ok(_) => {}
             Err(e) => {
                 if e.error_type == STUNErrorType::ReadError {

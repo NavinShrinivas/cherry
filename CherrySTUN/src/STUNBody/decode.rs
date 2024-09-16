@@ -6,13 +6,14 @@ use crate::STUNBody::attributes::attributes::STUNAttributesContent;
 use crate::STUNBody::body::STUNBody;
 use crate::STUNError::error::{STUNError, STUNErrorType, STUNStep};
 use crate::STUNSerde::decode::STUNDecode;
+use crate::STUNContext::context::STUNContext;
 use byteorder::{NetworkEndian, ReadBytesExt};
 use std::io::{Cursor, ErrorKind, Read};
 
 use crate::STUNHeader::header::STUN_HEADER_TRANSACTION_ID_START_POSITION;
 
 impl STUNDecode for STUNBody {
-    fn decode(cursor: &mut Cursor<&[u8]>) -> Result<STUNBody, STUNError> {
+    fn decode(cursor: &mut Cursor<&[u8]>, decode_context:Option<&mut STUNContext>) -> Result<STUNBody, STUNError> {
         //All the way till the end will be attrs
         let mut new_body = STUNBody::new();
         loop {
@@ -118,7 +119,7 @@ mod test {
     fn stun_body_decode_success_test() -> Result<(), String> {
         let mut response_cursor = &mut roll_cursor_on_fixture(&STUN_RESPONSE_BODY_TEST);
         response_cursor.set_position(STUN_HEADER_ENDING_POSITION as u64); //20 is the end of headers
-        let response = STUNBody::decode(&mut response_cursor);
+        let response = STUNBody::decode(&mut response_cursor, None);
         match response {
             Ok(resp) => {
                 assert_eq!(resp.attributes.get(0).unwrap().length, 8 as u16);
@@ -161,7 +162,7 @@ mod test {
 
     #[test]
     fn stun_body_decode_failure_test() -> Result<(), String> {
-        let response = STUNBody::decode(&mut roll_cursor_on_fixture(&STUN_RESPONSE_BODY_FAIL_TEST));
+        let response = STUNBody::decode(&mut roll_cursor_on_fixture(&STUN_RESPONSE_BODY_FAIL_TEST), None);
         match response {
             Ok(_) => {
                 return Err(String::from(
