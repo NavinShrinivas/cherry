@@ -165,17 +165,25 @@ impl STUNAttributesContent {
                 })
             }
         };
+        //We only store sasled removed username in memory, this allows the user to input raw
+        //unicode for username values and we handle the sasling in our critical path
+        let unsasled_username = match Self::sasl(username_string.clone()) {
+            Ok(str) => str,
+            Err(e) => {
+                return Err(e);
+            }
+        };
         match decode_context {
             //Filling context if provided and not filled before
             Some(context) => {
                 if context.username == None {
-                    context.username = Some(username_string.clone());
+                    context.username = Some(unsasled_username.clone());
                 }
             }
             None => {}
         }
         let username_attribute = Self::Username {
-            username: Some(username_string),
+            username: Some(unsasled_username),
         };
         return Ok(username_attribute);
     }
