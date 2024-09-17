@@ -22,6 +22,7 @@ pub enum STUNErrorType {
     XORObsfucationError,
     UTF8DecodeError, //Used when we try representing the bin as a utf8 encoded string but is not
     RequiredContextMissingError,
+    SASLPrepError,
 }
 
 #[derive(Debug)]

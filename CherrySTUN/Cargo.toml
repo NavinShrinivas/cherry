@@ -11,3 +11,4 @@ byteorder = "1.5.0"
 num = "0.4"
 num-derive = "0.4"
 num-traits = "0.2"
+stringprep = "0.1.5" ## Used for username and password preps in STUNBody, espcially for Message Integrity prep

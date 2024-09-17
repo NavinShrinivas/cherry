@@ -13,7 +13,7 @@ use std::io::{Cursor, ErrorKind, Read};
 use crate::STUNHeader::header::STUN_HEADER_TRANSACTION_ID_START_POSITION;
 
 impl STUNDecode for STUNBody {
-    fn decode(cursor: &mut Cursor<&[u8]>, decode_context:Option<&mut STUNContext>) -> Result<STUNBody, STUNError> {
+    fn decode(cursor: &mut Cursor<&[u8]>, _decode_context:Option<&mut STUNContext>) -> Result<STUNBody, STUNError> {
         //All the way till the end will be attrs
         let mut new_body = STUNBody::new();
         loop {
