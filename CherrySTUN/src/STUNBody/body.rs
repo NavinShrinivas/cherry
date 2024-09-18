@@ -90,7 +90,7 @@ impl STUNBody {
     }
 
     ///To be called from encode flows
-    pub fn write_attribute_header_encode(
+    pub fn write_attribute_header_to_body_encode(
         content_body: &[u8],
         write_cursor: &mut Cursor<&mut Vec<u8>>,
         attribute_type: STUNAttributeType,

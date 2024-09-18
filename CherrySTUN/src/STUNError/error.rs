@@ -34,7 +34,11 @@ pub struct STUNError {
 
 impl std::fmt::Display for STUNError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?} {:?} {}", self.step, self.error_type, self.message)
+        write!(
+            f,
+            "{:?} | {:?} | {}",
+            self.step, self.error_type, self.message
+        )
     }
 }
 

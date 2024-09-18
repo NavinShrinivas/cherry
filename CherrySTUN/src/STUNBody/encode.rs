@@ -1,22 +1,26 @@
 use crate::STUNBody::attributes::attributes::{STUNAttributeType, STUNAttributesContent};
 use crate::STUNBody::body::STUNBody;
+use crate::STUNContext::context::STUNContext;
 use crate::STUNError::error::{STUNError, STUNErrorType, STUNStep};
 use crate::STUNHeader::header::STUN_HEADER_TRANSACTION_ID_START_POSITION;
 use crate::STUNSerde::encode::STUNEncode;
-use crate::STUNContext::context::STUNContext;
 use std::io::{Read, Write};
 
 #[allow(unreachable_code)]
 #[allow(unreachable_patterns)] //to cover "_" branch incase of new attributes
 
 impl STUNEncode for STUNBody {
-    fn encode(&self, write_cursor: &mut std::io::Cursor<&mut Vec<u8>>, _: Option<STUNContext>) -> Result<(), STUNError> {
+    fn encode(
+        &self,
+        write_cursor: &mut std::io::Cursor<&mut Vec<u8>>,
+        encode_context: &Option<&STUNContext>,
+    ) -> Result<(), STUNError> {
         for (_, attribute) in self.attributes.iter().enumerate() {
             match attribute.value {
                 STUNAttributesContent::MappedAddress { .. } => {
                     match STUNAttributesContent::encode_mapped_address(&attribute.value) {
                         Ok(bin_rep) => {
-                            match Self::write_attribute_header_encode(
+                            match Self::write_attribute_header_to_body_encode(
                                 &bin_rep,
                                 write_cursor,
                                 STUNAttributeType::MappedAddress,
@@ -60,7 +64,7 @@ impl STUNEncode for STUNBody {
                         transaction_id,
                     ) {
                         Ok(bin_rep) => {
-                            match Self::write_attribute_header_encode(
+                            match Self::write_attribute_header_to_body_encode(
                                 &bin_rep,
                                 write_cursor,
                                 STUNAttributeType::XORMappedAddress,
@@ -83,9 +87,38 @@ impl STUNEncode for STUNBody {
                         Err(e) => return Err(e),
                     };
                 }
+                STUNAttributesContent::Username { .. } => {
+                    match STUNAttributesContent::encode_username(&attribute.value, encode_context) {
+                        Ok(mut bin) => {
+                            match Self::write_attribute_header_to_body_encode(
+                                &bin,
+                                write_cursor,
+                                STUNAttributeType::Username,
+                            ) {
+                                Ok(_) => {}
+                                Err(e) => return Err(e),
+                            };
+                            STUNAttributesContent::add_padding_to_username_bin(&mut bin);
+                            match write_cursor.write_all(bin.as_slice()) {
+                                Ok(_) => {}
+                                Err(e) => {
+                                    return Err(STUNError {
+                                        step: STUNStep::STUNDecode,
+                                        error_type: STUNErrorType::WriteError,
+                                        message: e.to_string()
+                                            + ". Error writing encoded attribute to cursor.",
+                                    })
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            return Err(e);
+                        }
+                    }
+                }
                 _ => {
                     return Err(STUNError {
-                        step: STUNStep::STUNDecode,
+                        step: STUNStep::STUNEncode,
                         error_type: STUNErrorType::InvalidOrUnsupportedAttribute,
                         message: "Found invalid/unsupported attribute type when encoding.:"
                             .to_string(),
@@ -138,8 +171,16 @@ mod test {
             STUNAttributeType::XORMappedAddress,
             0,
         );
+        let expected_username = "\u{30de}\u{30c8}\u{30ea}\u{30c3}\u{30af}\u{30b9}";
+        test_body.add_new_attribute(
+            STUNAttributesContent::Username {
+                username: Some(expected_username.to_string()),
+            },
+            STUNAttributeType::Username,
+            0,
+        );
         let answer_bin = STUN_RESPONSE_BODY_TEST.to_vec();
-        match test_body.encode(&mut write_test_cursor, None) {
+        match test_body.encode(&mut write_test_cursor, &None) {
             Ok(_) => {}
             Err(e) => {
                 return Err(e.to_string() + ". Got unexpected error.");
@@ -177,7 +218,7 @@ mod test {
             STUNAttributeType::XORMappedAddress,
             0,
         );
-        match test_body.encode(&mut write_test_cursor, None) {
+        match test_body.encode(&mut write_test_cursor, &None) {
             Ok(_) => {}
             Err(e) => {
                 if e.error_type == STUNErrorType::ReadError {

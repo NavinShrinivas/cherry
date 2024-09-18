@@ -16,13 +16,13 @@ pub enum STUNAttributeType {
 pub enum STUNAttributesContent {
     MappedAddress { address: SocketAddr },
     XORMappedAddress { address: SocketAddr }, //converts the obfuscated bin to socketAddr
-                                              //and stores it
-    //We need to have `STUNContext` with username and password (no None) 
+    //and stores it
+    //We need to have `STUNContext` with username and password (no None)
     //we come across `MessageIntegrity` attributes and optionally for `Username`.
-    //If STUNContext attribute was provided we consider username 
+    //If STUNContext attribute was provided we consider username
     //from STUNContext if String is empty in the `username` value in the attribute enc/dec
     //functions
-    Username {username: Option<String>}
+    Username { username: Option<String> },
 }
 
 impl STUNAttributesContent {
@@ -34,9 +34,7 @@ impl STUNAttributesContent {
             STUNAttributesContent::XORMappedAddress { .. } => {
                 return STUNAttributeType::XORMappedAddress;
             }
-            STUNAttributesContent::Username { .. } => {
-                return STUNAttributeType::Username
-            }
+            STUNAttributesContent::Username { .. } => return STUNAttributeType::Username,
         };
     }
 }

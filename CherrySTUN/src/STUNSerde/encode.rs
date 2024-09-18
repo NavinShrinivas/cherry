@@ -10,6 +10,6 @@ pub trait STUNEncode {
     fn encode(
         &self,
         write_cursor: &mut Cursor<&mut Vec<u8>>,
-        encode_context: Option<STUNContext>,
+        encode_context: &Option<&STUNContext>,
     ) -> Result<(), STUNError>;
 }

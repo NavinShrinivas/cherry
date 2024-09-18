@@ -13,6 +13,22 @@ impl STUNAttributesContent {
     }
     //=> We store non sasled username in mem, needs to be sasled before encode
 
+    // The following table provides examples of how various character data
+    // is transformed by the SASLprep string preparation algorithm
+    //
+    // #  Input            Output     Comments
+    // -  -----            ------     --------
+    // 1  I<U+00AD>X       IX         SOFT HYPHEN mapped to nothing
+    // 2  user             user       no transformation
+    // 3  USER             USER       case preserved, will not match #2
+    // 4  <U+00AA>         a          output is NFKC, input in ISO 8859-1
+    // 5  <U+2168>         IX         output is NFKC, will match #1
+    // 6  <U+0007>                    Error - prohibited character
+    // 7  <U+0627><U+0031>            Error - bidirectional check
+    // This profile is intended to prepare simple user name and password
+    // strings for comparison or use in cryptographic functions (e.g.,
+    // message digests).  The preparation algorithm was specifically
+    // designed such that its output is canonical, and it is well-formed.
     pub fn new_username_from_sasled_string(sasled_username: String) -> Result<Self, STUNError> {
         let clear_username = match saslprep(&sasled_username) {
             Ok(str) => str.to_string(),
@@ -49,8 +65,20 @@ impl STUNAttributesContent {
         return Ok(inverted_username);
     }
 
+    pub fn add_padding_to_username_bin(username_bin: &mut Vec<u8>) {
+        let padding = username_bin.len() % 4;
+        for _ in 0..padding {
+            username_bin.push(0 as u8); //Adding padding, can be random
+        }
+    }
+
     ///Keep the username empty if you want it filled from the context
-    pub fn encode_username(&self, encode_context: STUNContext) -> Result<Vec<u8>, STUNError> {
+    ///returns the non padded username bin, use the `add_padding_to_username_bin` to add the
+    ///required padding
+    pub fn encode_username(
+        &self,
+        encode_context: &Option<&STUNContext>,
+    ) -> Result<Vec<u8>, STUNError> {
         match self {
             Self::Username { username } => {
                 let bin: Vec<u8> = Vec::new();
@@ -65,11 +93,7 @@ impl STUNAttributesContent {
                                 return Err(e);
                             }
                         };
-                        let mut username_bin = sasled_username.clone().into_bytes();
-                        let padding = username_bin.len() % 4;
-                        for _ in 0..padding {
-                            username_bin.push(0 as u8); //Adding padding, can be random
-                        }
+                        let username_bin = sasled_username.clone().into_bytes();
                         match write_cursor.write_all(&username_bin[..]) {
                             Ok(_) => {}
                             Err(e) => {
@@ -83,13 +107,28 @@ impl STUNAttributesContent {
                         };
                     }
                     None => {
-                        let username_string = match encode_context.username {
-                            Some(str) => str,
+                        let username_string = match encode_context {
+                            Some(str) => {
+                                match &str.username{
+                                    Some(username) => {
+                                        username
+                                    },
+                                    None => {
+                                return Err(STUNError {
+                                    step: STUNStep::STUNEncode,
+                                    error_type: STUNErrorType::RequiredContextMissingError,
+                                    message: "Found context, but no user name present in context. Either context needs to be filled with username or it must be provided explicitly."
+                                        .to_string(),
+                                })
+
+                                    }
+                                }
+                            },
                             None => {
                                 return Err(STUNError {
                                     step: STUNStep::STUNEncode,
                                     error_type: STUNErrorType::RequiredContextMissingError,
-                                    message: "Did not find required username in provided context "
+                                    message: "Did not find context or username. Any one needs to be provided."
                                         .to_string(),
                                 })
                             }
@@ -100,11 +139,7 @@ impl STUNAttributesContent {
                                 return Err(e);
                             }
                         };
-                        let mut username_bin = sasled_username.into_bytes();
-                        let padding = username_bin.len() % 4;
-                        for _ in 0..padding {
-                            username_bin.push(0 as u8); //Adding padding, can be random
-                        }
+                        let username_bin = sasled_username.into_bytes();
                         match write_cursor.write_all(&username_bin[..]) {
                             Ok(_) => {}
                             Err(e) => {
@@ -133,13 +168,12 @@ impl STUNAttributesContent {
 
     pub fn decode_username(
         cursor: &mut Cursor<&[u8]>,
-        decode_context: Option<&mut STUNContext>,
+        decode_context: &mut Option<&mut STUNContext>,
         length: u16,
     ) -> Result<Self, STUNError> {
         let padded_username_length = (length % 4) + length;
-        let mut username_with_padding: Vec<u8> =
-            Vec::with_capacity(padded_username_length as usize);
-        match cursor.read_exact(&mut username_with_padding[..]) {
+        let mut username_with_padding = vec![0; padded_username_length as usize];
+        match cursor.read_exact(username_with_padding.as_mut_slice()) {
             Ok(_) => {}
             Err(e) => {
                 return Err(STUNError {

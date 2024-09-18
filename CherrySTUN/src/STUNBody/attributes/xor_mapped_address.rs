@@ -347,7 +347,9 @@ impl STUNAttributesContent {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::TestFixtures::fixtures::{ STUN_ATTRIBUTE_IPV6_XOR_MAPPED_ADDRESS_BIN, TEST_TRANSACTION_ID};
+    use crate::TestFixtures::fixtures::{
+        STUN_ATTRIBUTE_IPV6_XOR_MAPPED_ADDRESS_BIN, TEST_TRANSACTION_ID,
+    };
     #[test]
     fn xor_mapped_address_valid_test_encode() {
         let xor_mapped_addr = STUNAttributesContent::XORMappedAddress {

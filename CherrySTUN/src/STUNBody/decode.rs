@@ -4,16 +4,21 @@
 use crate::STUNBody::attributes::attributes::STUNAttributeType;
 use crate::STUNBody::attributes::attributes::STUNAttributesContent;
 use crate::STUNBody::body::STUNBody;
+use crate::STUNContext::context::STUNContext;
 use crate::STUNError::error::{STUNError, STUNErrorType, STUNStep};
 use crate::STUNSerde::decode::STUNDecode;
-use crate::STUNContext::context::STUNContext;
 use byteorder::{NetworkEndian, ReadBytesExt};
 use std::io::{Cursor, ErrorKind, Read};
 
 use crate::STUNHeader::header::STUN_HEADER_TRANSACTION_ID_START_POSITION;
 
+//driver is responsible for copying required fields into the context as well
+//Hence, most clones present here are to populate the context in mem
 impl STUNDecode for STUNBody {
-    fn decode(cursor: &mut Cursor<&[u8]>, _decode_context:Option<&mut STUNContext>) -> Result<STUNBody, STUNError> {
+    fn decode(
+        cursor: &mut Cursor<&[u8]>,
+        decode_context: &mut Option<&mut STUNContext>,
+    ) -> Result<STUNBody, STUNError> {
         //All the way till the end will be attrs
         let mut new_body = STUNBody::new();
         loop {
@@ -92,6 +97,17 @@ impl STUNDecode for STUNBody {
                         length,
                     )
                 }
+                Some(STUNAttributeType::Username) => {
+                    let attr_content = match STUNAttributesContent::decode_username(
+                        cursor,
+                        decode_context,
+                        length,
+                    ) {
+                        Ok(content) => content,
+                        Err(e) => return Err(e),
+                    };
+                    new_body.add_new_attribute(attr_content, STUNAttributeType::Username, length)
+                }
                 _ => {
                     return Err(STUNError {
                         step: STUNStep::STUNDecode,
@@ -119,9 +135,12 @@ mod test {
     fn stun_body_decode_success_test() -> Result<(), String> {
         let mut response_cursor = &mut roll_cursor_on_fixture(&STUN_RESPONSE_BODY_TEST);
         response_cursor.set_position(STUN_HEADER_ENDING_POSITION as u64); //20 is the end of headers
-        let response = STUNBody::decode(&mut response_cursor, None);
+        let mut test_encode_context = STUNContext::new();
+        let mut option_encode_context = Some(&mut test_encode_context);
+        let response = STUNBody::decode(&mut response_cursor, &mut option_encode_context);
         match response {
             Ok(resp) => {
+                assert_eq!(resp.attributes.len(), 3); //number of variables
                 assert_eq!(resp.attributes.get(0).unwrap().length, 8 as u16);
                 assert_eq!(
                     resp.attributes.get(0).unwrap().attribute_type,
@@ -150,6 +169,20 @@ mod test {
                         )
                     }
                 );
+
+                assert_eq!(resp.attributes.get(2).unwrap().length, 18 as u16);
+                assert_eq!(
+                    resp.attributes.get(2).unwrap().attribute_type,
+                    STUNAttributeType::Username
+                );
+                let expected_username = "\u{30de}\u{30c8}\u{30ea}\u{30c3}\u{30af}\u{30b9}";
+                //This string is unaffected by sasl
+                assert_eq!(
+                    resp.attributes.get(2).unwrap().value,
+                    STUNAttributesContent::Username {
+                        username: Some(expected_username.to_string())
+                    }
+                );
                 return Ok(());
             }
             Err(e) => {
@@ -162,7 +195,10 @@ mod test {
 
     #[test]
     fn stun_body_decode_failure_test() -> Result<(), String> {
-        let response = STUNBody::decode(&mut roll_cursor_on_fixture(&STUN_RESPONSE_BODY_FAIL_TEST), None);
+        let response = STUNBody::decode(
+            &mut roll_cursor_on_fixture(&STUN_RESPONSE_BODY_FAIL_TEST),
+            &mut None,
+        );
         match response {
             Ok(_) => {
                 return Err(String::from(
