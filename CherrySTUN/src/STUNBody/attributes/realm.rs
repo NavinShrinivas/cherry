@@ -5,13 +5,14 @@ use std::io::{Cursor, Read, Write};
 use stringprep::saslprep;
 
 impl STUNAttributesContent {
-    ///To be used if you have non sasled username...often new usernames
-    pub fn new_username(username: String) -> Self {
-        Self::Username {
-            username: Some(username),
+    ///To be used if you have non sasled realm...often new realm
+    ///Usage of this function will low
+    pub fn new_realm(realm: String) -> Self {
+        Self::Realm {
+            realm: Some(realm),
         }
     }
-    //=> We store non sasled username in mem, needs to be sasled before encode
+    //=> We store non sasled realm in mem, needs to be sasled before encode
 
     // The following table provides examples of how various character data
     // is transformed by the SASLprep string preparation algorithm
@@ -29,8 +30,9 @@ impl STUNAttributesContent {
     // strings for comparison or use in cryptographic functions (e.g.,
     // message digests).  The preparation algorithm was specifically
     // designed such that its output is canonical, and it is well-formed.
-    pub fn new_username_from_sasled_string(sasled_username: String) -> Result<Self, STUNError> {
-        let clear_username = match saslprep(&sasled_username) {
+    
+    pub fn new_realm_from_sasled_string(sasled_realm: String) -> Result<Self, STUNError> {
+        let clear_realm = match saslprep(&sasled_realm) {
             Ok(str) => str.to_string(),
             Err(e) => {
                 return Err(STUNError {
@@ -39,76 +41,76 @@ impl STUNAttributesContent {
                     message: "Error prepping SASL".to_string()
                         + e.to_string().as_str()
                         + "Attempted on: "
-                        + sasled_username.as_str(),
+                        + sasled_realm.as_str(),
                 })
             }
         };
-        Ok(Self::Username {
-            username: Some(clear_username), //We only store non sasled string in memory
+        Ok(Self::Realm {
+            realm: Some(clear_realm), //We only store non sasled string in memory
         })
     }
 
 
-    pub fn add_padding_to_username_bin(username_bin: &mut Vec<u8>) {
-        let length = username_bin.len() as u16;
-        let padded_username_length: u16;
+    pub fn add_padding_to_realm_bin(realm_bin: &mut Vec<u8>) {
+        let padded_realm_length: u16;
+        let length = realm_bin.len() as u16;
         if length % 4 == 0{
-            padded_username_length = length as u16;
+            padded_realm_length = length;
         }else{
-            padded_username_length = ((length as f32/4.0).ceil() * 4.0)as u16;
+            padded_realm_length = ((length as f32/4.0).ceil() * 4.0)as u16;
         }
-        let padding = padded_username_length - length;
+        let padding = padded_realm_length - length;
         for _ in 0..padding {
-            username_bin.push(0 as u8); //Adding padding, can be random
+            realm_bin.push(0 as u8); //Adding padding, can be random
         }
     }
 
-    ///Keep the username empty if you want it filled from the context
-    ///returns the non padded username bin, use the `add_padding_to_username_bin` to add the
+    ///Keep the realm empty if you want it filled from the context
+    ///returns the non padded realm bin, use the `add_padding_to_realm_bin` to add the
     ///required padding
-    pub fn encode_username(
+    pub fn encode_realm(
         &self,
         encode_context: &Option<&STUNContext>,
     ) -> Result<Vec<u8>, STUNError> {
         match self {
-            Self::Username { username } => {
+            Self::Realm { realm } => {
                 let bin: Vec<u8> = Vec::new();
                 let mut write_cursor = Cursor::new(bin);
-                match username {
-                    Some(username_string) => {
+                match realm {
+                    Some(realm_string) => {
                         //moving from context to processing will mostly always require a clone as
                         //all those properties are heap allocated
-                        let sasled_username = match Self::sasl(username_string.clone()) {
+                        let sasled_realm = match Self::sasl(realm_string.clone()) {
                             Ok(str) => str,
                             Err(e) => {
                                 return Err(e);
                             }
                         };
-                        let username_bin = sasled_username.clone().into_bytes();
-                        match write_cursor.write_all(&username_bin[..]) {
+                        let realm_bin = sasled_realm.clone().into_bytes();
+                        match write_cursor.write_all(&realm_bin[..]) {
                             Ok(_) => {}
                             Err(e) => {
                                 return Err(STUNError {
                                     step: STUNStep::STUNEncode,
                                     error_type: STUNErrorType::WriteError,
-                                    message: "Error writing username to bin rep. ".to_string()
+                                    message: "Error writing realm to bin rep. ".to_string()
                                         + e.to_string().as_str(),
                                 })
                             }
                         };
                     }
                     None => {
-                        let username_string = match encode_context {
+                        let realm_string = match encode_context {
                             Some(str) => {
-                                match &str.username{
-                                    Some(username) => {
-                                        username
+                                match &str.realm{
+                                    Some(realm) => {
+                                        realm
                                     },
                                     None => {
                                 return Err(STUNError {
                                     step: STUNStep::STUNEncode,
                                     error_type: STUNErrorType::RequiredContextMissingError,
-                                    message: "Found context, but no user name present in context. Either context needs to be filled with username or it must be provided explicitly."
+                                    message: "Found context, but no realm present in context. Either context needs to be filled with realm or it must be provided explicitly."
                                         .to_string(),
                                 })
 
@@ -119,25 +121,25 @@ impl STUNAttributesContent {
                                 return Err(STUNError {
                                     step: STUNStep::STUNEncode,
                                     error_type: STUNErrorType::RequiredContextMissingError,
-                                    message: "Did not find context or username. Any one needs to be provided."
+                                    message: "Did not find context or realm. Any one needs to be provided."
                                         .to_string(),
                                 })
                             }
                         };
-                        let sasled_username = match Self::sasl(username_string.clone()) {
+                        let sasled_realm = match Self::sasl(realm_string.clone()) {
                             Ok(str) => str,
                             Err(e) => {
                                 return Err(e);
                             }
                         };
-                        let username_bin = sasled_username.into_bytes();
-                        match write_cursor.write_all(&username_bin[..]) {
+                        let realm_bin = sasled_realm.into_bytes();
+                        match write_cursor.write_all(&realm_bin[..]) {
                             Ok(_) => {}
                             Err(e) => {
                                 return Err(STUNError {
                                     step: STUNStep::STUNEncode,
                                     error_type: STUNErrorType::WriteError,
-                                    message: "Error writing username to bin rep. ".to_string()
+                                    message: "Error writing realm to bin rep. ".to_string()
                                         + e.to_string().as_str(),
                                 })
                             }
@@ -150,55 +152,54 @@ impl STUNAttributesContent {
                 return Err(STUNError {
                     step: STUNStep::STUNEncode,
                     error_type: STUNErrorType::AttributeTypeMismatch,
-                    message: "Called encode function for Mapped address on non Mapped address type"
+                    message: "Called encode function for Realm on non realm type"
                         .to_string(),
                 })
             }
         }
     }
 
-    pub fn decode_username(
+    pub fn decode_realm(
         cursor: &mut Cursor<&[u8]>,
         decode_context: &mut Option<&mut STUNContext>,
         length: u16,
     ) -> Result<Self, STUNError> {
-        let padded_username_length: u16;
+        let padded_realm_length: u16;
         if length % 4 == 0{
-            padded_username_length = length;
+            padded_realm_length = length;
         }else{
-            padded_username_length = ((length as f32/4.0).ceil() * 4.0)as u16;
+            padded_realm_length = ((length as f32/4.0).ceil() * 4.0)as u16;
         }
-
-        let mut username_with_padding = vec![0; padded_username_length as usize];
-        match cursor.read_exact(username_with_padding.as_mut_slice()) {
+        let mut realm_with_padding = vec![0; padded_realm_length as usize];
+        match cursor.read_exact(realm_with_padding.as_mut_slice()) {
             Ok(_) => {}
             Err(e) => {
                 return Err(STUNError {
                     step: STUNStep::STUNDecode,
                     error_type: STUNErrorType::ReadError,
-                    message: "Error reading user from bin rep. ".to_string()
-                        + e.to_string().as_str(),
+                    message: "Error reading realm from bin rep. ".to_string()
+                        + e.to_string().as_str() + padded_realm_length.to_string().as_str(),
                 })
             }
         };
-        let username_without_padding: Vec<u8> = username_with_padding[..length as usize]
+        let realm_without_padding: Vec<u8> = realm_with_padding[..length as usize]
             .iter()
             .cloned()
             .collect();
-        let username_string = match String::from_utf8(username_without_padding) {
+        let realm_string = match String::from_utf8(realm_without_padding) {
             Ok(str) => str,
             Err(e) => {
                 return Err(STUNError {
                     step: STUNStep::STUNDecode,
                     error_type: STUNErrorType::UTF8DecodeError,
-                    message: "Error reading user from bin rep. ".to_string()
+                    message: "Error reading realm from bin rep. ".to_string()
                         + e.to_string().as_str(),
                 })
             }
         };
-        //We only store sasled removed username in memory, this allows the user to input raw
-        //unicode for username values and we handle the sasling in our critical path
-        let unsasled_username = match Self::sasl(username_string.clone()) {
+        //We only store sasled removed real in memory, this allows the user to input raw
+        //unicode for realm values and we handle the sasling in our critical path
+        let sasled_realm = match Self::sasl(realm_string.clone()) {
             Ok(str) => str,
             Err(e) => {
                 return Err(e);
@@ -207,16 +208,16 @@ impl STUNAttributesContent {
         match decode_context {
             //Filling context if provided and not filled before
             Some(context) => {
-                if context.username == None {
-                    context.username = Some(unsasled_username.clone());
+                if context.realm == None {
+                    context.realm = Some(sasled_realm.clone());
                 }
             }
             None => {}
         }
-        let username_attribute = Self::Username {
-            username: Some(unsasled_username),
+        let realm_attribute = Self::Realm {
+            realm: Some(realm_string),
         };
-        return Ok(username_attribute);
+        return Ok(realm_attribute);
     }
 }
 
@@ -224,16 +225,18 @@ impl STUNAttributesContent {
 mod test {
     use super::*;
     use crate::TestFixtures::fixtures::*;
+
     #[test]
-    fn test_username_from_sasled_string() {
-        let sasled_string = String::from_utf8(USERNAME_BODY.to_vec()).unwrap();
-        let username_attr =
-            STUNAttributesContent::new_username_from_sasled_string(sasled_string[..18].to_string());
-        match username_attr {
+    fn test_realm_from_sasled_string() {
+        let sasled_string = String::from_utf8(REALM_BODY.to_vec()).unwrap();
+        let realm_attr =
+            STUNAttributesContent::new_realm_from_sasled_string(sasled_string[..11].to_string()); 
+        //slice to avoid padding before feeding into creation
+        match realm_attr {
             Ok(usern) => match usern {
-                STUNAttributesContent::Username { username } => {
-                    let expected = "\u{30de}\u{30c8}\u{30ea}\u{30c3}\u{30af}\u{30b9}";
-                    assert_eq!(username, Some(expected.to_string()));
+                STUNAttributesContent::Realm { realm } => {
+                    let expected = "example.org";
+                    assert_eq!(realm, Some(expected.to_string()));
                 }
                 _ => {
                     panic!("Found error, unexpected");
@@ -244,23 +247,60 @@ mod test {
                 panic!("Found error, unexpected");
             }
         }
-
-        let sasled_string = String::from_utf8(PSEUDO_PASSWORD_SASL_TEST.to_vec()).unwrap();
-        let username_attr =
-            STUNAttributesContent::new_username_from_sasled_string(sasled_string[..19].to_string());
-        match username_attr {
-            Ok(usern) => match usern {
-                STUNAttributesContent::Username { username } => {
-                    let expected = "The<>M<a>tr<IX>"; //SASLprep changes it a bit
-                    assert_eq!(username, Some(expected.to_string()));
-                }
-                _ => {
-                    panic!("Found error, unexpected");
-                }
-            },
+        return;
+    }
+    
+    #[test]
+    fn test_realm_encode_normal_flow(){
+        let test_encode_context = STUNContext::new();
+        let  option_encode_context = Some(&test_encode_context);
+        let test_realm_attr = STUNAttributesContent::Realm{
+            realm: Some(String::from("example.org"))
+        };
+        match test_realm_attr.encode_realm(&option_encode_context){
+            Ok(mut bin) => {
+                STUNAttributesContent::add_padding_to_realm_bin(&mut bin);
+                assert_eq!(bin, REALM_BODY);
+            }, 
             Err(e) => {
                 println!("{:?}", e);
-                panic!("Found error, unexpected");
+                panic!("Unexpected error...");
+            }
+        }
+
+
+        let mut test_encode_context = STUNContext::new();
+        test_encode_context.realm = Some("example.org".to_string());
+        let  option_encode_context = Some(&test_encode_context);
+        let test_realm_attr = STUNAttributesContent::Realm{
+            realm: None
+        };
+        match test_realm_attr.encode_realm(&option_encode_context){
+            Ok(mut bin) => {
+                STUNAttributesContent::add_padding_to_realm_bin(&mut bin);
+                assert_eq!(bin, REALM_BODY);
+            }, 
+            Err(e) => {
+                println!("{:?}", e);
+                panic!("Unexpected error...");
+            }
+        }
+        return;
+    }
+
+    #[test]
+    fn test_realm_encode_error_flow(){
+        let test_encode_context = STUNContext::new();
+        let  option_encode_context = Some(&test_encode_context);
+        let test_realm_attr = STUNAttributesContent::Realm{
+            realm: None
+        };
+        match test_realm_attr.encode_realm(&option_encode_context){
+            Ok(_) => {
+                panic!("Expected error, but did not get one.")
+            }, 
+            Err(e) => {
+                println!("{:?}", e);
             }
         }
         return;

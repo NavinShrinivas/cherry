@@ -4,7 +4,7 @@ pub struct STUNContext {
     pub username: Option<String>, //Will be filled by decode if provided
     pub password: Option<String>,
     pub nonce: Option<Vec<u8>>, //Will be filled by decode if provided
-    pub realm: Option<Vec<u8>>, //Will be filled bt decode if provided
+    pub realm: Option<String>, //Will be filled bt decode if provided
 }
 
 //To get username, none and realm filled by the decode functions, you must:

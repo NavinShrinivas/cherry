@@ -2,14 +2,14 @@ use std::net::SocketAddr;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, FromPrimitive)]
 pub enum STUNAttributeType {
-    MappedAddress = 0x0001,
-    Username = 0x0006,
+    MappedAddress = 0x0001, //Done
+    Username = 0x0006, //Done
     MessageIntegrity = 0x0008,
     ErrorCode = 0x0009,
     UnknownAttributes = 0x000A,
-    Real = 0x0014,
+    Realm = 0x0014,
     Nonce = 0x0015,
-    XORMappedAddress = 0x0020, //Mostly used
+    XORMappedAddress = 0x0020, //Done
 }
 
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq)]
@@ -23,6 +23,7 @@ pub enum STUNAttributesContent {
     //from STUNContext if String is empty in the `username` value in the attribute enc/dec
     //functions
     Username { username: Option<String> },
+    Realm {realm: Option<String>},
 }
 
 impl STUNAttributesContent {
@@ -35,6 +36,7 @@ impl STUNAttributesContent {
                 return STUNAttributeType::XORMappedAddress;
             }
             STUNAttributesContent::Username { .. } => return STUNAttributeType::Username,
+            STUNAttributesContent::Realm { .. } => return STUNAttributeType::Realm,
         };
     }
 }

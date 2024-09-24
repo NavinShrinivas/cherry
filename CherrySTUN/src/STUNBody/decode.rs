@@ -108,6 +108,14 @@ impl STUNDecode for STUNBody {
                     };
                     new_body.add_new_attribute(attr_content, STUNAttributeType::Username, length)
                 }
+                Some(STUNAttributeType::Realm) => {
+                    let attr_content =
+                        match STUNAttributesContent::decode_realm(cursor, decode_context, length) {
+                            Ok(content) => content,
+                            Err(e) => return Err(e),
+                        };
+                    new_body.add_new_attribute(attr_content, STUNAttributeType::Realm, length);
+                }
                 _ => {
                     return Err(STUNError {
                         step: STUNStep::STUNDecode,
@@ -140,7 +148,7 @@ mod test {
         let response = STUNBody::decode(&mut response_cursor, &mut option_encode_context);
         match response {
             Ok(resp) => {
-                assert_eq!(resp.attributes.len(), 3); //number of variables
+                assert_eq!(resp.attributes.len(), 4); //number of variables
                 assert_eq!(resp.attributes.get(0).unwrap().length, 8 as u16);
                 assert_eq!(
                     resp.attributes.get(0).unwrap().attribute_type,
@@ -181,6 +189,20 @@ mod test {
                     resp.attributes.get(2).unwrap().value,
                     STUNAttributesContent::Username {
                         username: Some(expected_username.to_string())
+                    }
+                );
+
+                assert_eq!(resp.attributes.get(3).unwrap().length, 11 as u16);
+                assert_eq!(
+                    resp.attributes.get(3).unwrap().attribute_type,
+                    STUNAttributeType::Realm
+                );
+                let expected_realm = "example.org";
+                //This string is unaffected by sasl
+                assert_eq!(
+                    resp.attributes.get(3).unwrap().value,
+                    STUNAttributesContent::Realm {
+                        realm: Some(expected_realm.to_string())
                     }
                 );
                 return Ok(());
