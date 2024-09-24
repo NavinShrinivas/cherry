@@ -20,4 +20,18 @@ impl STUNAttributesContent {
         };
         return Ok(inverted_username);
     }
+
+    pub fn add_padding_to_attr_bin(attr_bin: &mut Vec<u8>) {
+        let length = attr_bin.len() as u16;
+        let padded_attr_length: u16;
+        if length % 4 == 0{
+            padded_attr_length = length as u16;
+        }else{
+            padded_attr_length = ((length as f32/4.0).ceil() * 4.0)as u16;
+        }
+        let padding = padded_attr_length - length;
+        for _ in 0..padding {
+            attr_bin.push(0 as u8); //Adding padding, can be random
+        }
+    }
 }

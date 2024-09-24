@@ -49,19 +49,6 @@ impl STUNAttributesContent {
     }
 
 
-    pub fn add_padding_to_username_bin(username_bin: &mut Vec<u8>) {
-        let length = username_bin.len() as u16;
-        let padded_username_length: u16;
-        if length % 4 == 0{
-            padded_username_length = length as u16;
-        }else{
-            padded_username_length = ((length as f32/4.0).ceil() * 4.0)as u16;
-        }
-        let padding = padded_username_length - length;
-        for _ in 0..padding {
-            username_bin.push(0 as u8); //Adding padding, can be random
-        }
-    }
 
     ///Keep the username empty if you want it filled from the context
     ///returns the non padded username bin, use the `add_padding_to_username_bin` to add the

@@ -98,7 +98,7 @@ impl STUNEncode for STUNBody {
                                 Ok(_) => {}
                                 Err(e) => return Err(e),
                             };
-                            STUNAttributesContent::add_padding_to_username_bin(&mut bin);
+                            STUNAttributesContent::add_padding_to_attr_bin(&mut bin);
                             match write_cursor.write_all(bin.as_slice()) {
                                 Ok(_) => {}
                                 Err(e) => {
@@ -115,7 +115,7 @@ impl STUNEncode for STUNBody {
                             return Err(e);
                         }
                     }
-                },
+                }
                 STUNAttributesContent::Realm { .. } => {
                     match STUNAttributesContent::encode_realm(&attribute.value, encode_context) {
                         Ok(mut bin) => {
@@ -127,7 +127,7 @@ impl STUNEncode for STUNBody {
                                 Ok(_) => {}
                                 Err(e) => return Err(e),
                             };
-                            STUNAttributesContent::add_padding_to_realm_bin(&mut bin);
+                            STUNAttributesContent::add_padding_to_attr_bin(&mut bin);
                             match write_cursor.write_all(bin.as_slice()) {
                                 Ok(_) => {}
                                 Err(e) => {
@@ -144,7 +144,36 @@ impl STUNEncode for STUNBody {
                             return Err(e);
                         }
                     }
-                },
+                }
+                STUNAttributesContent::Nonce { .. } => {
+                    match STUNAttributesContent::encode_nonce(&attribute.value, encode_context) {
+                        Ok(mut bin) => {
+                            //we should call header write before adding padding to body to maintain
+                            //true content length
+                            match Self::write_attribute_header_to_body_encode(
+                                &bin,
+                                write_cursor,
+                                STUNAttributeType::Nonce,
+                            ) {
+                                Ok(_) => {}
+                                Err(e) => return Err(e),
+                            };
+                            STUNAttributesContent::add_padding_to_attr_bin(&mut bin);
+                            match write_cursor.write_all(bin.as_slice()) {
+                                Ok(_) => {}
+                                Err(e) => {
+                                    return Err(STUNError {
+                                        step: STUNStep::STUNDecode,
+                                        error_type: STUNErrorType::WriteError,
+                                        message: e.to_string()
+                                            + ". Error writing encoded attribute to cursor.",
+                                    })
+                                }
+                            }
+                        }
+                        Err(e) => return Err(e),
+                    }
+                }
                 _ => {
                     return Err(STUNError {
                         step: STUNStep::STUNEncode,
@@ -214,6 +243,13 @@ mod test {
                 realm: Some(String::from("example.org")),
             },
             STUNAttributeType::Realm,
+            0,
+        );
+        test_body.add_new_attribute(
+            STUNAttributesContent::Nonce {
+                nonce: Some(String::from("f//499k954d6OL34oL9FSTvy64sA")),
+            },
+            STUNAttributeType::Nonce,
             0,
         );
         let answer_bin = STUN_RESPONSE_BODY_TEST.to_vec();

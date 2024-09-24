@@ -50,21 +50,6 @@ impl STUNAttributesContent {
         })
     }
 
-
-    pub fn add_padding_to_realm_bin(realm_bin: &mut Vec<u8>) {
-        let padded_realm_length: u16;
-        let length = realm_bin.len() as u16;
-        if length % 4 == 0{
-            padded_realm_length = length;
-        }else{
-            padded_realm_length = ((length as f32/4.0).ceil() * 4.0)as u16;
-        }
-        let padding = padded_realm_length - length;
-        for _ in 0..padding {
-            realm_bin.push(0 as u8); //Adding padding, can be random
-        }
-    }
-
     ///Keep the realm empty if you want it filled from the context
     ///returns the non padded realm bin, use the `add_padding_to_realm_bin` to add the
     ///required padding
@@ -259,7 +244,7 @@ mod test {
         };
         match test_realm_attr.encode_realm(&option_encode_context){
             Ok(mut bin) => {
-                STUNAttributesContent::add_padding_to_realm_bin(&mut bin);
+                STUNAttributesContent::add_padding_to_attr_bin(&mut bin);
                 assert_eq!(bin, REALM_BODY);
             }, 
             Err(e) => {
@@ -277,7 +262,7 @@ mod test {
         };
         match test_realm_attr.encode_realm(&option_encode_context){
             Ok(mut bin) => {
-                STUNAttributesContent::add_padding_to_realm_bin(&mut bin);
+                STUNAttributesContent::add_padding_to_attr_bin(&mut bin);
                 assert_eq!(bin, REALM_BODY);
             }, 
             Err(e) => {

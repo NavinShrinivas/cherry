@@ -24,6 +24,9 @@ pub enum STUNAttributesContent {
     //functions
     Username { username: Option<String> },
     Realm {realm: Option<String>},
+    Nonce { nonce : Option<String> }
+    //As a rule of thumb, attributes that are wrapper in Option can be automagically filled
+    //to/from context
 }
 
 impl STUNAttributesContent {
@@ -37,6 +40,7 @@ impl STUNAttributesContent {
             }
             STUNAttributesContent::Username { .. } => return STUNAttributeType::Username,
             STUNAttributesContent::Realm { .. } => return STUNAttributeType::Realm,
+            STUNAttributesContent::Nonce { .. } => return STUNAttributeType::Nonce
         };
     }
 }

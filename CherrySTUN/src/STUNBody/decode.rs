@@ -116,6 +116,13 @@ impl STUNDecode for STUNBody {
                         };
                     new_body.add_new_attribute(attr_content, STUNAttributeType::Realm, length);
                 }
+                Some(STUNAttributeType::Nonce) => {
+                    let attr_content = match STUNAttributesContent::decode_nonce(cursor, decode_context, length){
+                        Ok(content) => {content},
+                        Err(e) => return Err(e)
+                    };
+                    new_body.add_new_attribute(attr_content, STUNAttributeType::Nonce, length);
+                }
                 _ => {
                     return Err(STUNError {
                         step: STUNStep::STUNDecode,
@@ -148,7 +155,7 @@ mod test {
         let response = STUNBody::decode(&mut response_cursor, &mut option_encode_context);
         match response {
             Ok(resp) => {
-                assert_eq!(resp.attributes.len(), 4); //number of variables
+                assert_eq!(resp.attributes.len(), 5); //number of variables
                 assert_eq!(resp.attributes.get(0).unwrap().length, 8 as u16);
                 assert_eq!(
                     resp.attributes.get(0).unwrap().attribute_type,
@@ -203,6 +210,19 @@ mod test {
                     resp.attributes.get(3).unwrap().value,
                     STUNAttributesContent::Realm {
                         realm: Some(expected_realm.to_string())
+                    }
+                );
+
+                assert_eq!(resp.attributes.get(4).unwrap().length, 28 as u16);
+                assert_eq!(
+                    resp.attributes.get(4).unwrap().attribute_type,
+                    STUNAttributeType::Nonce
+                );
+                let expected_nonce = "f//499k954d6OL34oL9FSTvy64sA";
+                assert_eq!(
+                    resp.attributes.get(4).unwrap().value,
+                    STUNAttributesContent::Nonce {
+                        nonce: Some(expected_nonce.to_string())
                     }
                 );
                 return Ok(());
