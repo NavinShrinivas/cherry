@@ -174,6 +174,10 @@ impl STUNEncode for STUNBody {
                         Err(e) => return Err(e),
                     }
                 }
+                STUNAttributesContent::MessageIntegrity { .. }=> {
+                    //We return on coming across a request to add MessageIntegrity
+                    return Ok(())
+                }
                 _ => {
                     return Err(STUNError {
                         step: STUNStep::STUNEncode,

@@ -30,6 +30,7 @@ impl STUNAttributesContent {
     // message digests).  The preparation algorithm was specifically
     // designed such that its output is canonical, and it is well-formed.
     pub fn new_username_from_sasled_string(sasled_username: String) -> Result<Self, STUNError> {
+        //The process of `sasl` is simply normalisation.
         let clear_username = match saslprep(&sasled_username) {
             Ok(str) => str.to_string(),
             Err(e) => {
@@ -44,7 +45,7 @@ impl STUNAttributesContent {
             }
         };
         Ok(Self::Username {
-            username: Some(clear_username), //We only store non sasled string in memory
+            username: Some(clear_username), //We only store simple strings in mem
         })
     }
 
@@ -213,6 +214,11 @@ mod test {
     use crate::TestFixtures::fixtures::*;
     #[test]
     fn test_username_from_sasled_string() {
+
+        //Point of this test is to check if sasl is working as intended
+        //We test on two different string for this case
+        //One that is normalized to english and one that cannot be represented by the odinary qwert
+        //keyboard
         let sasled_string = String::from_utf8(USERNAME_BODY.to_vec()).unwrap();
         let username_attr =
             STUNAttributesContent::new_username_from_sasled_string(sasled_string[..18].to_string());
@@ -234,11 +240,12 @@ mod test {
 
         let sasled_string = String::from_utf8(PSEUDO_PASSWORD_SASL_TEST.to_vec()).unwrap();
         let username_attr =
-            STUNAttributesContent::new_username_from_sasled_string(sasled_string[..19].to_string());
+            STUNAttributesContent::new_username_from_sasled_string(sasled_string[..13].to_string());
+        // 16 (size of bin) - 3 (padding) = 13
         match username_attr {
             Ok(usern) => match usern {
                 STUNAttributesContent::Username { username } => {
-                    let expected = "The<>M<a>tr<IX>"; //SASLprep changes it a bit
+                    let expected = "TheMatrIX"; //SASLprep changes it a bit
                     assert_eq!(username, Some(expected.to_string()));
                 }
                 _ => {

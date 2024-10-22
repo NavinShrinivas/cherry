@@ -1,4 +1,8 @@
-// Be careful about Nones, if the context value is
+//Context mainly exists as it is used across requests and responses
+//Most HMAC calculation happens from here
+
+
+// Be careful about `None`, if the context value is
 // required and not present enc/dec will error out
 pub struct STUNContext {
     pub username: Option<String>, //Will be filled by decode if provided

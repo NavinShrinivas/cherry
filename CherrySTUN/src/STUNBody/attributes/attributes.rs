@@ -1,14 +1,15 @@
 use std::net::SocketAddr;
+use crate::STUN::message_integrity::STUNAuthType;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, FromPrimitive)]
 pub enum STUNAttributeType {
     MappedAddress = 0x0001, //Done
-    Username = 0x0006, //Done
+    Username = 0x0006,      //Done
     MessageIntegrity = 0x0008,
     ErrorCode = 0x0009,
     UnknownAttributes = 0x000A,
-    Realm = 0x0014,
-    Nonce = 0x0015,
+    Realm = 0x0014,            //Done
+    Nonce = 0x0015,            //Done
     XORMappedAddress = 0x0020, //Done
 }
 
@@ -23,10 +24,13 @@ pub enum STUNAttributesContent {
     //from STUNContext if String is empty in the `username` value in the attribute enc/dec
     //functions
     Username { username: Option<String> },
-    Realm {realm: Option<String>},
-    Nonce { nonce : Option<String> }
+    Realm { realm: Option<String> },
+    Nonce { nonce: Option<String> },
     //As a rule of thumb, attributes that are wrapper in Option can be automagically filled
     //to/from context
+    MessageIntegrity { authType: STUNAuthType }, //its used to check validity/fill in the Message Integrity for new messages
+                                                 //But the encode/decode function compulsorily needs the STUNContext to be
+                                                 //provided
 }
 
 impl STUNAttributesContent {
@@ -40,7 +44,10 @@ impl STUNAttributesContent {
             }
             STUNAttributesContent::Username { .. } => return STUNAttributeType::Username,
             STUNAttributesContent::Realm { .. } => return STUNAttributeType::Realm,
-            STUNAttributesContent::Nonce { .. } => return STUNAttributeType::Nonce
+            STUNAttributesContent::Nonce { .. } => return STUNAttributeType::Nonce,
+            STUNAttributesContent::MessageIntegrity { .. } => {
+                return STUNAttributeType::MessageIntegrity
+            }
         };
     }
 }

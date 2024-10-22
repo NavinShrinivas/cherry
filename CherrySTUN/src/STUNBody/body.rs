@@ -60,6 +60,7 @@ pub struct STUNAttributes {
     //filled by user.
     pub attribute_type: STUNAttributeType,
     pub value: STUNAttributesContent, //Contains mapping to type
+    _private: (), //To prevent direct construction of this struct
 }
 
 pub struct STUNBody {
@@ -86,10 +87,11 @@ impl STUNBody {
             length: bin_len,
             attribute_type,
             value: new_attribute,
+            _private: ()
         });
     }
 
-    ///To be called from encode flows
+    ///To be called from encode flows/driver
     pub fn write_attribute_header_to_body_encode(
         content_body: &[u8],
         write_cursor: &mut Cursor<&mut Vec<u8>>,

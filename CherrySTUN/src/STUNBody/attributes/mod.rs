@@ -8,3 +8,4 @@ mod xor_mapped_address;
 mod utils;
 mod realm;
 mod nonce;
+mod message_integrity;
