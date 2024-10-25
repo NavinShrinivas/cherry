@@ -69,3 +69,39 @@
  - Short-Term Password: The password component of a short-term  
       credential.
 > The authentication mechanism theory: https://datatracker.ietf.org/doc/html/rfc8489#section-9
+
+- Turns out, the sasl prep is very straight forward. The `<>` being used to represent unicode chars is only as a way to represent them. They dont actually show up in the final string rep of sasl preps.
+    - This confused me a lot when trying to test sasl prep from the test vectors
+
+### Message integrity calculation 
+
+hex rep (of body till message integrity with length representing including) :
+
+```
+000100602112a44278ad3433c6ad72c029da412e00060012e3839ee38388e383aae38383e382afe382b900000015001c662f2f3439396b39353464364f4c33346f4c394653547679363473410014000b6578616d706c652e6f726700
+```
+
+> Note: the length in the header should be set to the length of the message including message integrity (we know this before hand as HMAC is fixed in size)
+> >Note 2: This is because, its possible to have fingerprints after message integrity
+
+unicode escaper : https://dencode.com/en/string/unicode-escape (Doesnt normalise the unicode rep)
+
+Example :
+The<U+00AD>M<U+00AA>tr<U+2168> ---> The­MªtrⅨ ---(use cyberchef normalise unicode NFKC)---> The MatrIX
+
+> Note:
+> NFKC is a not equvivalent to sasl prep. sasl prep (atleast in the above example) removes the space between `The` and `MatrIX`.
+> This may have to do with the fact that NFKC is rule that preserves string length.
+
+
+HMAC key: use CyberChef ----> MD5 | Input: "sasl(username):sasl(realm):sasl(password)" (without quotes)
+
+> sasled string input to MD5: マトリックス:example.org:TheMatrIX
+
+HMAC key value : e8ca7ad59d5eb0518e312911d2dab2a9
+
+HMAC calculation: use Cyberchef ----> `From Hex` ----> `HMAC (key:e8ca7ad59d5eb0518e312911d2dab2a9) (SHA1)` | Input: hex rep of body (given above)
+
+HMAC value: f67024656dd64a3e02b8e0712e85c9a28ca89666
+
+Viola! It's done.
