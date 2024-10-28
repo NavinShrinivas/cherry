@@ -5,6 +5,7 @@
 pub enum STUNStep {
     STUNEncode,
     STUNDecode,
+    STUNUtils,
 }
 
 #[derive(Debug, PartialEq)]
@@ -23,6 +24,8 @@ pub enum STUNErrorType {
     UTF8DecodeError, //Used when we try representing the bin as a utf8 encoded string but is not
     RequiredContextMissingError,
     SASLPrepError,
+    InvalidMessageBinLength,
+    MessageIntegrityMismatch,
 }
 
 #[derive(Debug)]

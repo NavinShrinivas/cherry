@@ -1,14 +1,14 @@
 //Context mainly exists as it is used across requests and responses
 //Most HMAC calculation happens from here
 
-
 // Be careful about `None`, if the context value is
 // required and not present enc/dec will error out
+#[derive(Clone)]
 pub struct STUNContext {
     pub username: Option<String>, //Will be filled by decode if provided
     pub password: Option<String>, //Needs to be provided
-    pub nonce: Option<String>, //Will be filled by decode if provided
-    pub realm: Option<String>, //Will be filled bt decode if provided
+    pub nonce: Option<String>,    //Will be filled by decode if provided
+    pub realm: Option<String>,    //Will be filled bt decode if provided
 }
 
 //This context allows/makes our serde library to be a little bit smarter

@@ -1,5 +1,4 @@
 use std::net::SocketAddr;
-use crate::STUN::message_integrity::STUNAuthType;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, FromPrimitive)]
 pub enum STUNAttributeType {
@@ -11,6 +10,13 @@ pub enum STUNAttributeType {
     Realm = 0x0014,            //Done
     Nonce = 0x0015,            //Done
     XORMappedAddress = 0x0020, //Done
+}
+
+//To track type of authentication
+#[derive(Debug, PartialOrd, Ord, PartialEq, Eq)]
+pub enum STUNAuthType {
+    ShortTerm,
+    LongTerm,
 }
 
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq)]

@@ -152,37 +152,36 @@ impl STUNAttributesContent {
 mod test {
     use super::*;
     use crate::TestFixtures::fixtures::*;
-    
+
     #[test]
-    fn test_nonce_encode_normal_flow(){
+    fn test_nonce_encode_normal_flow() {
         let test_encode_context = STUNContext::new();
         let option_encode_context = Some(&test_encode_context);
-        let test_nonce_attr = STUNAttributesContent::Nonce{
-            nonce: Some(String::from("f//499k954d6OL34oL9FSTvy64sA"))
+        let test_nonce_attr = STUNAttributesContent::Nonce {
+            nonce: Some(String::from("f//499k954d6OL34oL9FSTvy64sA")),
         };
-        match test_nonce_attr.encode_nonce(&option_encode_context){
+        match test_nonce_attr.encode_nonce(&option_encode_context) {
             Ok(mut bin) => {
                 STUNAttributesContent::add_padding_to_attr_bin(&mut bin);
                 assert_eq!(bin, NONCE_BODY);
-            }, 
+            }
             Err(e) => {
                 println!("{:?}", e);
                 panic!("Unexpected error...");
             }
         }
 
-
         let mut test_encode_context = STUNContext::new();
         test_encode_context.nonce = Some("f//499k954d6OL34oL9FSTvy64sA".to_string());
-        let  option_encode_context = Some(&test_encode_context);
-        let test_nonce_attr = STUNAttributesContent::Nonce{
-            nonce: None //Asking to be filled from context
+        let option_encode_context = Some(&test_encode_context);
+        let test_nonce_attr = STUNAttributesContent::Nonce {
+            nonce: None, //Asking to be filled from context
         };
-        match test_nonce_attr.encode_nonce(&option_encode_context){
+        match test_nonce_attr.encode_nonce(&option_encode_context) {
             Ok(mut bin) => {
                 STUNAttributesContent::add_padding_to_attr_bin(&mut bin);
                 assert_eq!(bin, NONCE_BODY);
-            }, 
+            }
             Err(e) => {
                 println!("{:?}", e);
                 panic!("Unexpected error...");
@@ -192,16 +191,16 @@ mod test {
     }
 
     #[test]
-    fn test_nonce_encode_error_flow(){
+    fn test_nonce_encode_error_flow() {
         let test_encode_context = STUNContext::new();
-        let  option_encode_context = Some(&test_encode_context);
-        let test_realm_attr = STUNAttributesContent::Nonce{
-            nonce: None //Asking to be filled from context, but context also empty
+        let option_encode_context = Some(&test_encode_context);
+        let test_realm_attr = STUNAttributesContent::Nonce {
+            nonce: None, //Asking to be filled from context, but context also empty
         };
-        match test_realm_attr.encode_nonce(&option_encode_context){
+        match test_realm_attr.encode_nonce(&option_encode_context) {
             Ok(_) => {
                 panic!("Expected error, but did not get one.")
-            }, 
+            }
             Err(e) => {
                 println!("{:?}", e);
             }

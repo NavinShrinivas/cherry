@@ -174,9 +174,44 @@ impl STUNEncode for STUNBody {
                         Err(e) => return Err(e),
                     }
                 }
-                STUNAttributesContent::MessageIntegrity { .. }=> {
-                    //We return on coming across a request to add MessageIntegrity
-                    return Ok(())
+                STUNAttributesContent::MessageIntegrity { .. } => {
+                    match Self::add_pseudo_message_length_to_header(write_cursor, 24 as u16) {
+                        Ok(()) => {}
+                        Err(e) => return Err(e),
+                    }
+                    let message_bin_copy = write_cursor.get_ref().as_slice();
+                    //Setting the right length for calculating MessageIntegrity
+                    match STUNAttributesContent::compute_message_integrity(
+                        &attribute.value,
+                        encode_context,
+                        message_bin_copy,
+                    ) {
+                        Ok(mut bin) => {
+                            //we should call header write before adding padding to body to maintain
+                            //true content length
+                            match Self::write_attribute_header_to_body_encode(
+                                &bin,
+                                write_cursor,
+                                STUNAttributeType::MessageIntegrity,
+                            ) {
+                                Ok(_) => {}
+                                Err(e) => return Err(e),
+                            };
+                            STUNAttributesContent::add_padding_to_attr_bin(&mut bin);
+                            match write_cursor.write_all(bin.as_slice()) {
+                                Ok(_) => {}
+                                Err(e) => {
+                                    return Err(STUNError {
+                                        step: STUNStep::STUNDecode,
+                                        error_type: STUNErrorType::WriteError,
+                                        message: e.to_string()
+                                            + ". Error writing encoded attribute to cursor.",
+                                    })
+                                }
+                            }
+                        }
+                        Err(e) => return Err(e),
+                    }
                 }
                 _ => {
                     return Err(STUNError {
@@ -187,6 +222,10 @@ impl STUNEncode for STUNBody {
                     })
                 }
             };
+            match Self::write_current_message_length_to_header(write_cursor) {
+                Ok(()) => {}
+                Err(e) => return Err(e),
+            };
         }
         return Ok(());
     }
@@ -195,6 +234,8 @@ impl STUNEncode for STUNBody {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::STUNBody::attributes::attributes::STUNAuthType;
+    use crate::STUNContext::context::STUNContext;
     use crate::TestFixtures::fixtures::*;
     use std::io::Cursor;
     use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
@@ -236,7 +277,7 @@ mod test {
         let expected_username = "\u{30de}\u{30c8}\u{30ea}\u{30c3}\u{30af}\u{30b9}";
         test_body.add_new_attribute(
             STUNAttributesContent::Username {
-                username: Some(expected_username.to_string()),
+                username: None, //To be filled from context
             },
             STUNAttributeType::Username,
             0,
@@ -244,7 +285,7 @@ mod test {
 
         test_body.add_new_attribute(
             STUNAttributesContent::Realm {
-                realm: Some(String::from("example.org")),
+                realm: None, //To be filled from context
             },
             STUNAttributeType::Realm,
             0,
@@ -256,8 +297,20 @@ mod test {
             STUNAttributeType::Nonce,
             0,
         );
+
+        test_body.add_new_attribute(
+            STUNAttributesContent::MessageIntegrity {
+                authType: STUNAuthType::LongTerm,
+            },
+            STUNAttributeType::MessageIntegrity,
+            0,
+        );
         let answer_bin = STUN_RESPONSE_BODY_TEST.to_vec();
-        match test_body.encode(&mut write_test_cursor, &None) {
+        let mut encode_context = STUNContext::new();
+        encode_context.password = Some("The\u{00AD}M\u{00AA}tr\u{2168}".to_string());
+        encode_context.username = Some(expected_username.to_string());
+        encode_context.realm = Some("example.org".to_string());
+        match test_body.encode(&mut write_test_cursor, &Some(&encode_context)) {
             Ok(_) => {}
             Err(e) => {
                 return Err(e.to_string() + ". Got unexpected error.");

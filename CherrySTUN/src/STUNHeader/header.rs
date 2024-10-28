@@ -92,7 +92,7 @@ pub struct STUNHeader {
     pub message_length: u16, //Filled majorly when body attributes are added
     pub magic_number: u32,
     pub transaction_id: [u8; 12], //12 byte transactionID
-    _private: () //To protect direct building of this struct
+    _private: (),                 //To protect direct building of this struct
 }
 
 impl STUNHeader {
@@ -115,7 +115,7 @@ impl STUNHeader {
             message_length: 0,
             magic_number: STUN_5389_MAGIC_NUMBER_U32,
             transaction_id: tid,
-            _private: ()
+            _private: (),
         };
     }
     pub fn increment_message_length(&mut self, new_attribute_size: u16) {

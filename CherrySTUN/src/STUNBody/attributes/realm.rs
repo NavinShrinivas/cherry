@@ -8,9 +8,7 @@ impl STUNAttributesContent {
     ///To be used if you have non sasled realm...often new realm
     ///Usage of this function will low
     pub fn new_realm(realm: String) -> Self {
-        Self::Realm {
-            realm: Some(realm),
-        }
+        Self::Realm { realm: Some(realm) }
     }
     //=> We store non sasled realm in mem, needs to be sasled before encode
 
@@ -30,7 +28,7 @@ impl STUNAttributesContent {
     // strings for comparison or use in cryptographic functions (e.g.,
     // message digests).  The preparation algorithm was specifically
     // designed such that its output is canonical, and it is well-formed.
-    
+
     pub fn new_realm_from_sasled_string(sasled_realm: String) -> Result<Self, STUNError> {
         let clear_realm = match saslprep(&sasled_realm) {
             Ok(str) => str.to_string(),
@@ -137,8 +135,7 @@ impl STUNAttributesContent {
                 return Err(STUNError {
                     step: STUNStep::STUNEncode,
                     error_type: STUNErrorType::AttributeTypeMismatch,
-                    message: "Called encode function for Realm on non realm type"
-                        .to_string(),
+                    message: "Called encode function for Realm on non realm type".to_string(),
                 })
             }
         }
@@ -150,10 +147,10 @@ impl STUNAttributesContent {
         length: u16,
     ) -> Result<Self, STUNError> {
         let padded_realm_length: u16;
-        if length % 4 == 0{
+        if length % 4 == 0 {
             padded_realm_length = length;
-        }else{
-            padded_realm_length = ((length as f32/4.0).ceil() * 4.0)as u16;
+        } else {
+            padded_realm_length = ((length as f32 / 4.0).ceil() * 4.0) as u16;
         }
         let mut realm_with_padding = vec![0; padded_realm_length as usize];
         match cursor.read_exact(realm_with_padding.as_mut_slice()) {
@@ -163,7 +160,8 @@ impl STUNAttributesContent {
                     step: STUNStep::STUNDecode,
                     error_type: STUNErrorType::ReadError,
                     message: "Error reading realm from bin rep. ".to_string()
-                        + e.to_string().as_str() + padded_realm_length.to_string().as_str(),
+                        + e.to_string().as_str()
+                        + padded_realm_length.to_string().as_str(),
                 })
             }
         };
@@ -215,7 +213,7 @@ mod test {
     fn test_realm_from_sasled_string() {
         let sasled_string = String::from_utf8(REALM_BODY.to_vec()).unwrap();
         let realm_attr =
-            STUNAttributesContent::new_realm_from_sasled_string(sasled_string[..11].to_string()); 
+            STUNAttributesContent::new_realm_from_sasled_string(sasled_string[..11].to_string());
         //slice to avoid padding before feeding into creation
         match realm_attr {
             Ok(usern) => match usern {
@@ -234,37 +232,34 @@ mod test {
         }
         return;
     }
-    
+
     #[test]
-    fn test_realm_encode_normal_flow(){
+    fn test_realm_encode_normal_flow() {
         let test_encode_context = STUNContext::new();
-        let  option_encode_context = Some(&test_encode_context);
-        let test_realm_attr = STUNAttributesContent::Realm{
-            realm: Some(String::from("example.org"))
+        let option_encode_context = Some(&test_encode_context);
+        let test_realm_attr = STUNAttributesContent::Realm {
+            realm: Some(String::from("example.org")),
         };
-        match test_realm_attr.encode_realm(&option_encode_context){
+        match test_realm_attr.encode_realm(&option_encode_context) {
             Ok(mut bin) => {
                 STUNAttributesContent::add_padding_to_attr_bin(&mut bin);
                 assert_eq!(bin, REALM_BODY);
-            }, 
+            }
             Err(e) => {
                 println!("{:?}", e);
                 panic!("Unexpected error...");
             }
         }
 
-
         let mut test_encode_context = STUNContext::new();
         test_encode_context.realm = Some("example.org".to_string());
-        let  option_encode_context = Some(&test_encode_context);
-        let test_realm_attr = STUNAttributesContent::Realm{
-            realm: None
-        };
-        match test_realm_attr.encode_realm(&option_encode_context){
+        let option_encode_context = Some(&test_encode_context);
+        let test_realm_attr = STUNAttributesContent::Realm { realm: None };
+        match test_realm_attr.encode_realm(&option_encode_context) {
             Ok(mut bin) => {
                 STUNAttributesContent::add_padding_to_attr_bin(&mut bin);
                 assert_eq!(bin, REALM_BODY);
-            }, 
+            }
             Err(e) => {
                 println!("{:?}", e);
                 panic!("Unexpected error...");
@@ -274,16 +269,14 @@ mod test {
     }
 
     #[test]
-    fn test_realm_encode_error_flow(){
+    fn test_realm_encode_error_flow() {
         let test_encode_context = STUNContext::new();
-        let  option_encode_context = Some(&test_encode_context);
-        let test_realm_attr = STUNAttributesContent::Realm{
-            realm: None
-        };
-        match test_realm_attr.encode_realm(&option_encode_context){
+        let option_encode_context = Some(&test_encode_context);
+        let test_realm_attr = STUNAttributesContent::Realm { realm: None };
+        match test_realm_attr.encode_realm(&option_encode_context) {
             Ok(_) => {
                 panic!("Expected error, but did not get one.")
-            }, 
+            }
             Err(e) => {
                 println!("{:?}", e);
             }

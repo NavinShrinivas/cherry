@@ -49,8 +49,6 @@ impl STUNAttributesContent {
         })
     }
 
-
-
     ///Keep the username empty if you want it filled from the context
     ///returns the non padded username bin, use the `add_padding_to_username_bin` to add the
     ///required padding
@@ -151,10 +149,10 @@ impl STUNAttributesContent {
         length: u16,
     ) -> Result<Self, STUNError> {
         let padded_username_length: u16;
-        if length % 4 == 0{
+        if length % 4 == 0 {
             padded_username_length = length;
-        }else{
-            padded_username_length = ((length as f32/4.0).ceil() * 4.0)as u16;
+        } else {
+            padded_username_length = ((length as f32 / 4.0).ceil() * 4.0) as u16;
         }
 
         let mut username_with_padding = vec![0; padded_username_length as usize];
@@ -214,7 +212,6 @@ mod test {
     use crate::TestFixtures::fixtures::*;
     #[test]
     fn test_username_from_sasled_string() {
-
         //Point of this test is to check if sasl is working as intended
         //We test on two different string for this case
         //One that is normalized to english and one that cannot be represented by the odinary qwert

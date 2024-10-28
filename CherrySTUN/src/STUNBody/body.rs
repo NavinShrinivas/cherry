@@ -52,7 +52,7 @@ use crate::STUNBody::attributes::attributes::STUNAttributeType;
 use crate::STUNBody::attributes::attributes::STUNAttributesContent;
 use crate::STUNError::error::{STUNError, STUNErrorType, STUNStep};
 use byteorder::{NetworkEndian, WriteBytesExt};
-use std::io::Cursor;
+use std::io::{Cursor, Read, Write};
 
 #[derive(Eq, PartialEq, PartialOrd, Ord)]
 pub struct STUNAttributes {
@@ -60,7 +60,7 @@ pub struct STUNAttributes {
     //filled by user.
     pub attribute_type: STUNAttributeType,
     pub value: STUNAttributesContent, //Contains mapping to type
-    _private: (), //To prevent direct construction of this struct
+    _private: (),                     //To prevent direct construction of this struct
 }
 
 pub struct STUNBody {
@@ -87,7 +87,7 @@ impl STUNBody {
             length: bin_len,
             attribute_type,
             value: new_attribute,
-            _private: ()
+            _private: (),
         });
     }
 
@@ -122,6 +122,93 @@ impl STUNBody {
             }
         }
 
+        return Ok(());
+    }
+
+    pub fn write_current_message_length_to_header(
+        write_cursor: &mut std::io::Cursor<&mut Vec<u8>>,
+    ) -> Result<(), STUNError> {
+        let current_pos = write_cursor.position();
+        if current_pos < 20 {
+            return Err(STUNError {
+                step: STUNStep::STUNUtils,
+                error_type: STUNErrorType::InvalidMessageBinLength,
+                message: String::from(
+                    "Length of observed message bin is less than 20....that just impossible!",
+                ),
+            });
+        }
+        write_cursor.set_position(2);
+        let len_byte_rep: [u8; 2] = (current_pos as u16 - 20 as u16).to_be_bytes();
+        match write_cursor.write_all(&len_byte_rep) {
+            //write 2 bytes....as length
+            Ok(_) => {}
+            Err(e) => {
+                return Err(STUNError {
+                    step: STUNStep::STUNUtils,
+                    error_type: STUNErrorType::WriteError,
+                    message: String::from(
+                        "Error writing modified length to cursor.".to_string()
+                            + e.to_string().as_str(),
+                    ),
+                });
+            }
+        }
+        write_cursor.set_position(current_pos);
+        return Ok(());
+    }
+
+    pub fn add_pseudo_message_length_to_header(
+        write_cursor: &mut std::io::Cursor<&mut Vec<u8>>,
+        length_delta: u16,
+    ) -> Result<(), STUNError> {
+        let current_pos = write_cursor.position();
+        write_cursor.set_position(2);
+        let mut curr_len = [0; 2];
+        match write_cursor.read_exact(&mut curr_len) {
+            Ok(()) => {}
+            Err(e) => {
+                return Err(STUNError {
+                    step: STUNStep::STUNUtils,
+                    error_type: STUNErrorType::InvalidMessageBinLength,
+                    message: e.to_string() + "Error reading message len to add delta",
+                });
+            }
+        }
+        write_cursor.set_position(2);
+        let len_byte_rep: [u8; 2] = (u16::from_be_bytes(curr_len) + length_delta).to_be_bytes();
+        match write_cursor.write_all(&len_byte_rep) {
+            Ok(()) => {}
+            Err(e) => {
+                return Err(STUNError {
+                    step: STUNStep::STUNUtils,
+                    error_type: STUNErrorType::InvalidMessageBinLength,
+                    message: e.to_string() + "Error writing message len to add delta",
+                });
+            }
+        }
+        write_cursor.set_position(current_pos);
+        return Ok(());
+    }
+    pub fn add_pseudo_message_length_from_current_pos_to_header(
+        write_cursor: &mut std::io::Cursor<&mut Vec<u8>>,
+        length_delta: u16,
+    ) -> Result<(), STUNError> {
+        let current_pos = write_cursor.position();
+        let current_len = current_pos + 1;
+        write_cursor.set_position(2);
+        let len_byte_rep: [u8; 2] = (current_len as u16 + length_delta as u16).to_be_bytes();
+        match write_cursor.write_all(&len_byte_rep) {
+            Ok(()) => {}
+            Err(e) => {
+                return Err(STUNError {
+                    step: STUNStep::STUNUtils,
+                    error_type: STUNErrorType::InvalidMessageBinLength,
+                    message: e.to_string() + "Error writing message len to add delta",
+                });
+            }
+        }
+        write_cursor.set_position(current_pos);
         return Ok(());
     }
 }

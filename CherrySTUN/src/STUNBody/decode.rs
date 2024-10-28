@@ -3,6 +3,7 @@
 //attribute
 use crate::STUNBody::attributes::attributes::STUNAttributeType;
 use crate::STUNBody::attributes::attributes::STUNAttributesContent;
+use crate::STUNBody::attributes::attributes::STUNAuthType;
 use crate::STUNBody::body::STUNBody;
 use crate::STUNContext::context::STUNContext;
 use crate::STUNError::error::{STUNError, STUNErrorType, STUNStep};
@@ -117,11 +118,85 @@ impl STUNDecode for STUNBody {
                     new_body.add_new_attribute(attr_content, STUNAttributeType::Realm, length);
                 }
                 Some(STUNAttributeType::Nonce) => {
-                    let attr_content = match STUNAttributesContent::decode_nonce(cursor, decode_context, length){
-                        Ok(content) => {content},
-                        Err(e) => return Err(e)
-                    };
+                    let attr_content =
+                        match STUNAttributesContent::decode_nonce(cursor, decode_context, length) {
+                            Ok(content) => content,
+                            Err(e) => return Err(e),
+                        };
                     new_body.add_new_attribute(attr_content, STUNAttributeType::Nonce, length);
+                }
+                Some(STUNAttributeType::MessageIntegrity) => {
+                    let message_integrity_hmac = match STUNAttributesContent::extract_hmac(cursor) {
+                        Ok(hmac) => hmac,
+                        Err(e) => return Err(e),
+                    };
+                    let current_position = cursor.position();
+
+                    //To prepare the message for computing MI, we need to copy and make all needed
+                    //changes
+                    let mut trimmed_message_bin = vec![0; (current_position - 24) as usize];
+                    cursor.set_position(0);
+                    match cursor.read_exact(&mut trimmed_message_bin) {
+                        Ok(()) => {}
+                        Err(e) => {
+                            return Err(STUNError {
+                                step: STUNStep::STUNDecode,
+                                error_type: STUNErrorType::ReadError,
+                                message:
+                                    "Error reading from decode to make clone for MessageIntegrity"
+                                        .to_string()
+                                        + e.to_string().as_str(),
+                            })
+                        }
+                    };
+                    cursor.set_position(current_position);
+                    let trimmed_message_len = trimmed_message_bin.len() as u64;
+                    //setting position before message integrity to compute mi from our side
+                    let mut mod_cursor = Cursor::new(&mut trimmed_message_bin);
+                    mod_cursor.set_position(trimmed_message_len);
+                    //Setting pseudo message length to include hmac key for MI calculation
+                    match Self::add_pseudo_message_length_from_current_pos_to_header(
+                        &mut mod_cursor,
+                        24 as u16,
+                    ) {
+                        Ok(()) => {}
+                        Err(e) => return Err(e),
+                    }
+
+                    let message_bin_copy = mod_cursor.get_ref().as_slice();
+
+                    //Creating clone and checking if context exists in decode
+                    let context = match decode_context {
+                        Some(con) => con.clone(),
+                        None => return Err(STUNError {
+                            step: STUNStep::STUNDecode,
+                            error_type: STUNErrorType::MessageIntegrityMismatch,
+                            message:
+                                "Did not get expected context to form and validate MessageIntegrity"
+                                    .to_string(),
+                        }),
+                    };
+
+                    match STUNAttributesContent::compute_message_integrity(
+                        &STUNAttributesContent::MessageIntegrity {
+                            authType: STUNAuthType::LongTerm,
+                        },
+                        &Some(&context),
+                        message_bin_copy,
+                    ) {
+                        Ok(bin) => {
+                            if !crate::utils::two_vector_are_identical(bin, message_integrity_hmac)
+                            {
+                                return Err(STUNError {
+                                    step: STUNStep::STUNDecode,
+                                    error_type: STUNErrorType::MessageIntegrityMismatch,
+                                    message: "Message integrity mismatch during decode."
+                                        .to_string(),
+                                });
+                            }
+                        }
+                        Err(e) => return Err(e),
+                    }
                 }
                 _ => {
                     return Err(STUNError {
@@ -151,6 +226,7 @@ mod test {
         let mut response_cursor = &mut roll_cursor_on_fixture(&STUN_RESPONSE_BODY_TEST);
         response_cursor.set_position(STUN_HEADER_ENDING_POSITION as u64); //20 is the end of headers
         let mut test_encode_context = STUNContext::new();
+        test_encode_context.password = Some("The\u{00AD}M\u{00AA}tr\u{2168}".to_string());
         let mut option_encode_context = Some(&mut test_encode_context);
         let response = STUNBody::decode(&mut response_cursor, &mut option_encode_context);
         match response {

@@ -6,6 +6,7 @@ pub mod STUNError;
 pub mod STUNHeader;
 pub mod STUNSerde; //Interface for encode/decode for STUN
 mod TestFixtures;
+mod utils;
 
 #[macro_use]
 extern crate num_derive;
