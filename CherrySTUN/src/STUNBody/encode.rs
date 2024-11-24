@@ -307,6 +307,8 @@ mod test {
         );
         let answer_bin = STUN_RESPONSE_BODY_TEST.to_vec();
         let mut encode_context = STUNContext::new();
+
+        //context in theory should have been filled by some previous decodes
         encode_context.password = Some("The\u{00AD}M\u{00AA}tr\u{2168}".to_string());
         encode_context.username = Some(expected_username.to_string());
         encode_context.realm = Some("example.org".to_string());

@@ -4,12 +4,15 @@ use std::net::SocketAddr;
 pub enum STUNAttributeType {
     MappedAddress = 0x0001, //Done
     Username = 0x0006,      //Done
-    MessageIntegrity = 0x0008,
+    MessageIntegrity = 0x0008, //Done
     ErrorCode = 0x0009,
-    UnknownAttributes = 0x000A,
+    UnknownAttributes = 0x000A, //[TODO]
     Realm = 0x0014,            //Done
     Nonce = 0x0015,            //Done
     XORMappedAddress = 0x0020, //Done
+    Fingerprint = 0x8028, //[TODO]
+    Software = 0x8022, //[TODO]
+    AlternateServer = 0x8023, //[TODO]
 }
 
 //To track type of authentication

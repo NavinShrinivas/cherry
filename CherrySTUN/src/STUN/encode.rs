@@ -9,9 +9,7 @@ impl STUNEncode for STUN {
     ) -> Result<(), crate::STUNError::error::STUNError> {
         //trigger header encode
         //trigger body encode
-        //Add message integrity if it exists in the list of requested attributes
-        //Add fingerprint if is exits in the list of attrs after message integrity
-        //fill the right length in the header after everything
+        //we do not handled short term message integrity yet and not fingerprint
         match self.header.encode(write_cursor, encode_context) {
             Ok(()) => {}
             Err(e) => {

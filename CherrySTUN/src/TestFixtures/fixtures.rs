@@ -236,9 +236,6 @@ pub const STUN_RESPONSE_BODY_TEST: [u8;152] = [
      0x75, 0xe2, 0x7e, 0x0e, 
      0x1e, 0x4f, 0xff, 0xe2,
 ];
-// 0, 8, 0, 20,
-// 245, 60, 137, 225, 216, 47, 202, 36, 179, 101, 248, 97, 115, 120, 176, 224, 23, 84, 217, 169
-//To test encode and decode body, we add to the above bin rep for every new attribute
 
 pub const STUN_RESPONSE_BODY_FAIL_TEST: [u8;12] = [
      0x23, 0x01, 0x00, 0x08, //header, with invalid attribute type
