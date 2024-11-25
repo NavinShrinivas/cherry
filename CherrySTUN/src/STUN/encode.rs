@@ -2,6 +2,10 @@ use crate::STUNSerde::encode::STUNEncode;
 use crate::STUN::stun::STUN;
 
 impl STUNEncode for STUN {
+    ///Used for encode a message (struct -> binary)
+    ///Accepts the following: 
+    ///     - A mutable ref of a write cursor wrapped around a vector (to write outputs to)
+    ///     - A optional context (If provided, will use values from it)
     fn encode(
         &self,
         write_cursor: &mut std::io::Cursor<&mut Vec<u8>>,

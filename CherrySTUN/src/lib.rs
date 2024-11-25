@@ -1,12 +1,20 @@
 #![allow(non_snake_case)]
-pub mod STUN;
-pub mod STUNBody;
-pub mod STUNContext;
-pub mod STUNError;
-pub mod STUNHeader;
-pub mod STUNSerde; //Interface for encode/decode for STUN
+mod STUN;
+mod STUNBody;
+mod STUNContext;
+mod STUNError;
+mod STUNHeader;
+mod STUNSerde; //Interface for encode/decode for STUN
 mod TestFixtures;
 mod utils;
+
+pub use STUN::stun as stun;
+pub use STUNHeader::header as stunHeader;
+pub use STUNBody::body as stunBody;
+pub use STUNContext::context as stunContext;
+pub use STUNSerde::encode as stunEncode;
+pub use STUNSerde::decode as stunDecode;
+pub use STUNBody::attributes::attributes as stunAttributes;
 
 #[macro_use]
 extern crate num_derive;
