@@ -54,7 +54,7 @@ use crate::STUNError::error::{STUNError, STUNErrorType, STUNStep};
 use byteorder::{NetworkEndian, WriteBytesExt};
 use std::io::{Cursor, Read, Write};
 
-#[derive(Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Eq, PartialEq, PartialOrd, Ord, Debug)]
 pub struct STUNAttributes {
     pub length: u16, //len in equal bin rep, only filled by the decode function. Not expected to be
     //filled by user.
@@ -63,6 +63,7 @@ pub struct STUNAttributes {
     _private: (),                     //To prevent direct construction of this struct
 }
 
+#[derive(Debug)]
 pub struct STUNBody {
     pub attributes: Vec<STUNAttributes>,
 }
@@ -210,5 +211,14 @@ impl STUNBody {
         }
         write_cursor.set_position(current_pos);
         return Ok(());
+    }
+    pub fn padded_len_calculator(length: u16) -> u16 {
+        let padded_username_length: u16;
+        if length % 4 == 0 {
+            padded_username_length = length;
+        } else {
+            padded_username_length = ((length as f32 / 4.0).ceil() * 4.0) as u16;
+        }
+        return padded_username_length;
     }
 }

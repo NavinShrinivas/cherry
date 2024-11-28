@@ -3,6 +3,7 @@ use crate::STUNBody::body::STUNBody;
 use crate::STUNContext::context::STUNContext;
 use crate::STUNHeader::header::STUNHeader;
 
+#[derive(Debug)]
 pub struct STUN {
     pub header: STUNHeader,
     pub body: STUNBody,

@@ -7,6 +7,7 @@ mod STUNHeader;
 mod STUNSerde; //Interface for encode/decode for STUN
 mod TestFixtures;
 mod utils;
+mod STUNClient;
 
 pub use STUN::stun as stun;
 pub use STUNHeader::header as stunHeader;
@@ -15,6 +16,7 @@ pub use STUNContext::context as stunContext;
 pub use STUNSerde::encode as stunEncode;
 pub use STUNSerde::decode as stunDecode;
 pub use STUNBody::attributes::attributes as stunAttributes;
+pub use STUNClient::client as stunClient;
 
 #[macro_use]
 extern crate num_derive;

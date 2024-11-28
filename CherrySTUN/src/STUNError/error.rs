@@ -6,6 +6,7 @@ pub enum STUNStep {
     STUNEncode,
     STUNDecode,
     STUNUtils,
+    STUNNetwork,
 }
 
 #[derive(Debug, PartialEq)]
@@ -26,6 +27,10 @@ pub enum STUNErrorType {
     SASLPrepError,
     InvalidMessageBinLength,
     MessageIntegrityMismatch,
+    ErrorSendingMessageToServer, 
+    ErrorReceivingFromServer,
+    NetworkTimeoutError,
+    ErrorSettingNetworkTimeout,
 }
 
 #[derive(Debug)]

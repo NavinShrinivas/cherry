@@ -214,12 +214,13 @@ impl STUNEncode for STUNBody {
                     }
                 }
                 _ => {
-                    return Err(STUNError {
-                        step: STUNStep::STUNEncode,
-                        error_type: STUNErrorType::InvalidOrUnsupportedAttribute,
-                        message: "Found invalid/unsupported attribute type when encoding.:"
-                            .to_string(),
-                    })
+                    continue;
+                    // return Err(STUNError {
+                    //     step: STUNStep::STUNEncode,
+                    //     error_type: STUNErrorType::InvalidOrUnsupportedAttribute,
+                    //     message: "Found invalid/unsupported attribute type when encoding.:"
+                    //         .to_string(),
+                    // })
                 }
             };
             match Self::write_current_message_length_to_header(write_cursor) {
