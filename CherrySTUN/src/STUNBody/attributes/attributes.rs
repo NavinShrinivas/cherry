@@ -13,19 +13,21 @@ pub enum STUNAttributeType {
     Fingerprint = 0x8028, //[TODO]
     Software = 0x8022, //[TODO]
     AlternateServer = 0x8023, //[TODO]
+    OtherAddress= 0x802C, //Used for testing NAT behvaviour. (Couldnt find it documented anywhere)
 }
 
 //To track type of authentication
-#[derive(Debug, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone)]
 pub enum STUNAuthType {
     ShortTerm,
     LongTerm,
 }
 
-#[derive(Debug, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone)]
 pub enum STUNAttributesContent {
     MappedAddress { address: SocketAddr },
     XORMappedAddress { address: SocketAddr }, //converts the obfuscated bin to socketAddr
+    OtherAddress { address: SocketAddr }, //converts the obfuscated bin to socketAddr
     //and stores it
     //We need to have `STUNContext` with username and password (no None)
     //we come across `MessageIntegrity` attributes and optionally for `Username`.
@@ -56,6 +58,9 @@ impl STUNAttributesContent {
             STUNAttributesContent::Nonce { .. } => return STUNAttributeType::Nonce,
             STUNAttributesContent::MessageIntegrity { .. } => {
                 return STUNAttributeType::MessageIntegrity
+            },
+            STUNAttributesContent::OtherAddress { .. } => {
+                return STUNAttributeType::OtherAddress
             }
         };
     }

@@ -343,7 +343,6 @@ impl STUNAttributesContent {
     }
 }
 
-//[TODO]: Write tests similar to mapped address, atleast for encode
 #[cfg(test)]
 mod test {
     use super::*;
@@ -365,7 +364,7 @@ mod test {
                 assert_eq!(&bin[..], STUN_ATTRIBUTE_IPV6_XOR_MAPPED_ADDRESS_BIN)
             }
             Err(e) => {
-                println!("{:?}", e);
+                log::error!("{:?}", e);
                 panic!("Found error, unexpected");
             }
         }

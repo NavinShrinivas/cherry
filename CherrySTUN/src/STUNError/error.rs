@@ -31,6 +31,8 @@ pub enum STUNErrorType {
     ErrorReceivingFromServer,
     NetworkTimeoutError,
     ErrorSettingNetworkTimeout,
+    UnsupportedNATType,
+    DidNotFindExpectedAttribute,
 }
 
 #[derive(Debug)]

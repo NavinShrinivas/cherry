@@ -28,7 +28,7 @@ impl STUNAttributesContent {
                     }
                 }
                 let port = u16::from(address.port());
-                println!("{}", port);
+                log::debug!("{}", port);
                 match address {
                     std::net::SocketAddr::V4(ipv4add) => {
                         match header_cursor.write_u8(0x0000_0001){
@@ -258,7 +258,7 @@ mod test {
                 assert_eq!(&bin[..], STUN_ATTRIBUTE_IPV4_MAPPED_ADDRESS_BIN)
             }
             Err(e) => {
-                println!("{:?}", e);
+                log::error!("{:?}", e);
                 panic!("Found error, unexpected");
             }
         }

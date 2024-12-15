@@ -198,6 +198,29 @@ impl STUNDecode for STUNBody {
                         Err(e) => return Err(e),
                     }
                 }
+                Some(STUNAttributeType::OtherAddress) => {
+                    //Other address is used for testing NAT behaviour, has same structure as Mapped
+                    //address
+                    let attr_content = match STUNAttributesContent::decode_mapped_address(cursor) {
+                        Ok(content) => content,
+                        Err(e) => return Err(e),
+                    };
+                    match attr_content {
+                        STUNAttributesContent::MappedAddress { address } => {
+                            let attr_content_mod = STUNAttributesContent::OtherAddress{
+                                address
+                            };
+                            new_body.add_new_attribute(
+                                attr_content_mod,
+                                STUNAttributeType::OtherAddress,
+                                length,
+                            )
+                        },
+                        _ => {
+                            continue; //WHAT!
+                        }
+                    }
+                }
                 _ => {
                     cursor.set_position(cursor.position() + Self::padded_len_calculator(length) as u64);
                     continue;

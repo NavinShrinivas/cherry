@@ -111,7 +111,6 @@ impl STUNDecode for STUNHeader {
     }
 }
 
-//[TODO]: Write tests for deocde
 // Error branches :
 // - Error on wrong class
 // - Error on wrong magic number
@@ -185,7 +184,7 @@ mod test {
                 if e.error_type == STUNErrorType::WrongSizeError {
                     return Ok(());
                 } else {
-                    println!("{:?}", e);
+                    log::error!("{:?}", e);
                     return Err("Wrong error type, received.".to_string());
                 }
             }
@@ -209,7 +208,7 @@ mod test {
                 assert_eq!(header_obj, stun_request_binding_header_obj);
             }
             Err(e) => {
-                println!("{:?}", e);
+                log::error!("{:?}", e);
                 panic!("received error, expected success on decoding header");
             }
         };

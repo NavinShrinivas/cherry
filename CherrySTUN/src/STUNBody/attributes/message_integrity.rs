@@ -55,7 +55,7 @@ impl STUNAttributesContent {
                             Ok(bin) => bin,
                             Err(e) => return Err(e),
                         };
-                        println!("{:?} {:?}", hmac_key, message_bin);
+                        log::debug!("{:?} {:?}", hmac_key, message_bin);
                         let hmac_digest: [u8; hmac_sha1::SHA1_DIGEST_BYTES] =
                             hmac_sha1::hmac_sha1(hmac_key.as_slice(), message_bin);
                         match message_integrity_bin.write_all(&hmac_digest) {
@@ -157,9 +157,9 @@ impl STUNAttributesContent {
                 });
             }
         };
-        println!("{:?}", hmac_key_input);
+        log::debug!("{:?}", hmac_key_input);
         let digest = md5::compute(hmac_key_input);
-        println!("{:?}", digest);
+        log::debug!("{:?}", digest);
         return Ok(digest.to_vec());
     }
     pub fn extract_hmac(cursor: &mut Cursor<&[u8]>) -> Result<Vec<u8>, STUNError> {

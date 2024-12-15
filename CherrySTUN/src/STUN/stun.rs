@@ -1,15 +1,27 @@
-//[TODO]: To be used, eventually
 use crate::STUNBody::body::STUNBody;
-use crate::STUNContext::context::STUNContext;
 use crate::STUNHeader::header::STUNHeader;
+use crate::STUNHeader::header::{STUNMessageClass, STUNMessageMethod};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct STUN {
     pub header: STUNHeader,
     pub body: STUNBody,
     _private: (),                 //To protect direct building of this struct
 }
-use crate::STUNHeader::header::{STUNMessageClass, STUNMessageMethod};
+
+#[derive(Debug)]
+pub enum STUNNatMappingType{
+    EndpointIndependent,
+    AddressDependant,
+    PortDependant
+}
+
+#[derive(Debug)]
+pub enum STUNNatFilteringType{
+    EndpointIndependentFiltering,
+    AddressDependantFiltering,
+    AddressAndPortDependantFiltering
+}
 
 impl STUN {
     pub fn new(header: STUNHeader, body: STUNBody) -> Self {

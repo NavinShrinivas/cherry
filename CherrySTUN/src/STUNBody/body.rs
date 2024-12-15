@@ -54,7 +54,7 @@ use crate::STUNError::error::{STUNError, STUNErrorType, STUNStep};
 use byteorder::{NetworkEndian, WriteBytesExt};
 use std::io::{Cursor, Read, Write};
 
-#[derive(Eq, PartialEq, PartialOrd, Ord, Debug)]
+#[derive(Eq, PartialEq, PartialOrd, Ord, Debug, Clone)]
 pub struct STUNAttributes {
     pub length: u16, //len in equal bin rep, only filled by the decode function. Not expected to be
     //filled by user.
@@ -63,13 +63,12 @@ pub struct STUNAttributes {
     _private: (),                     //To prevent direct construction of this struct
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct STUNBody {
     pub attributes: Vec<STUNAttributes>,
 }
 
 impl STUNBody {
-    //[TODO] being able to "push" attributes to the vector
     //Also means we need to provide some way to build the attributes
     //And also being able to add MESSAGE-INTEGRITY and FINGERPRINT based on current body
     //And some way to block addition of attributes after MESSAGE-INTEGRITY and FINGERPRINT?

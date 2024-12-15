@@ -260,7 +260,6 @@ pub const STUN_TEST_HEADER: [u8; 20] = [
      0xfa, 0x87, 0xdf, 0xae,
 ];
 
-//[TODO]: Write test for this case, we wont get an error by expected address will be different
 //(Normally) Mapped address:  192.0.2.1 port 32853
 //(XOR) Mapped address:  2001:db8:1234:5678:11:2233:4455:6677 port 32853 //This we will get wrong
 pub const STUN_RESPONSE_BODY_WRONG_XOR_OBS: [u8;56] = [

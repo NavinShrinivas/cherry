@@ -230,7 +230,7 @@ mod test {
                 }
             },
             Err(e) => {
-                println!("{:?}", e);
+                log::error!("{:?}", e);
                 panic!("Found error, unexpected");
             }
         }
@@ -250,7 +250,7 @@ mod test {
                 }
             },
             Err(e) => {
-                println!("{:?}", e);
+                log::error!("{:?}", e);
                 panic!("Found error, unexpected");
             }
         }

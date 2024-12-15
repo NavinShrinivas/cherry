@@ -226,7 +226,7 @@ mod test {
                 }
             },
             Err(e) => {
-                println!("{:?}", e);
+                log::error!("{:?}", e);
                 panic!("Found error, unexpected");
             }
         }
@@ -246,7 +246,7 @@ mod test {
                 assert_eq!(bin, REALM_BODY);
             }
             Err(e) => {
-                println!("{:?}", e);
+                log::error!("{:?}", e);
                 panic!("Unexpected error...");
             }
         }
@@ -261,7 +261,7 @@ mod test {
                 assert_eq!(bin, REALM_BODY);
             }
             Err(e) => {
-                println!("{:?}", e);
+                log::error!("{:?}", e);
                 panic!("Unexpected error...");
             }
         }
@@ -278,7 +278,7 @@ mod test {
                 panic!("Expected error, but did not get one.")
             }
             Err(e) => {
-                println!("{:?}", e);
+                log::error!("{:?}", e);
             }
         }
         return;

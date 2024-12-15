@@ -85,7 +85,7 @@ pub const STUN_HEADER_ENDING_POSITION: u32 = 20;
   always zero.  This provides another way to distinguish STUN packets
   from packets of other protocols.
 * */
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq,Clone)]
 pub struct STUNHeader {
     pub message_class: STUNMessageClass,
     pub message_method: STUNMessageMethod,

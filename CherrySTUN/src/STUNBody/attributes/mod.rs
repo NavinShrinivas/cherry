@@ -9,3 +9,4 @@ mod realm;
 mod username;
 mod utils;
 mod xor_mapped_address;
+mod alternate_address;
