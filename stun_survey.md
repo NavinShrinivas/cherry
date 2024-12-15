@@ -5,6 +5,7 @@
 - Testing NAT mapping (RFC5780) [STUN] : https://datatracker.ietf.org/doc/html/rfc5780#page-10
 - Message attributes : https://datatracker.ietf.org/doc/html/rfc5389#section-15
 - test vectors for STUN requests : https://datatracker.ietf.org/doc/html/rfc5769
+- A good post on NAT hole punching: https://stackoverflow.com/questions/22712298/confusion-about-the-stun-server
 
 ## Reference projects : 
 
