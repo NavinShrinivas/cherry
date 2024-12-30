@@ -69,7 +69,10 @@ fn main() {
     match stunClient::StunClient::get_server_reflexive_address(8080){
         Ok(addr) => {
             info!("Server reflexive address/public: {:?}", addr);
-            warn!("Note: NAT hole to actual peers have not been made...should be done after ICE exchange.")
+            warn!("Note: NAT hole to actual peers have not been made...should be done after ICE exchange.");
+            warn!("And ICE exchange is done through a singnaling server.");
+            warn!("This is just a test to see if the server reflexive address can be fetched.");
+            warn!("This is not a complete ICE implementation.");
         }
         Err(e) => error!("{:?}", e)
     }

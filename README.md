@@ -5,4 +5,8 @@ As of now, only 1 (the initial protocol) is written, it's called STUN. Present i
 
 ## CherrySTUN
 
-a un-marshal/marshal implementation for the STUN protocol.
+A un-marshal/marshal implementation for the STUN protocol along with client. Helps finding out type of NAT and whether p2p is possible or not.
+
+## CherryExchange 
+
+A room management and signaling server. Doesn't maintain any state on disk, required to be alive at all times.
