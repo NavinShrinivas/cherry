@@ -1,4 +1,4 @@
-use log::info;
+use log::{info, error};
 use serde_yaml;
 use simple_logger::SimpleLogger;
 use std::collections::HashMap;
@@ -8,16 +8,21 @@ use std::io::prelude::*;
 use std::sync::Arc;
 use tokio::sync::{mpsc, RwLock};
 use warp::{ws::Message, Filter};
+use r2d2_redis::{r2d2, RedisConnectionManager};
 
 mod handlers;
 mod ws;
+mod redis;
+mod CeXError;
 
 #[derive(Debug, Clone)]
+
 pub struct Client {
     pub sender: Option<mpsc::UnboundedSender<std::result::Result<Message, warp::Error>>>,
 }
 
 type Clients = Arc<RwLock<HashMap<String, Client>>>; //we use the keys to identify the clients.
+type RedisConnectionPool = Arc<r2d2::Pool<RedisConnectionManager>>;
 
 #[tokio::main]
 async fn main() {
@@ -31,13 +36,24 @@ async fn main() {
 
     let port = env["port"].as_u64().unwrap_or(3030);
 
-    info!("Application Cherry Exchange Server : 0.0.0.0:{}", port);
+    info!("Starting Application Cherry Exchange Server on 0.0.0.0:{}", port);
+    info!("Connecting to Redis");
+
+    let redis_conn : RedisConnectionPool = match redis::connection::connect(&env){
+        Ok(pool) => Arc::new(pool),
+        Err(e) => {
+            error!("Unable to connect to Redis: {}", e);
+            return;
+        }
+    };
 
     let clients: Clients = Arc::new(RwLock::new(HashMap::new())); //maintains the client state for
                                                                   //the full app.
     let ws_route = warp::path("ws")
         .and(warp::ws())
         .and(with_clients(clients.clone()))
+        .and(with_environment(env.clone()))
+        .and(with_redis(redis_conn.clone()))
         .and_then(handlers::ws::ws_handler);
 
     let routes = ws_route.with(warp::cors().allow_any_origin());
@@ -52,9 +68,23 @@ fn load_yaml_env() -> serde_yaml::Value {
     file.read_to_string(&mut contents)
         .expect("Unable to read file");
 
-    return serde_yaml::from_str(&contents).unwrap();
+    return match serde_yaml::from_str(&contents){
+        Ok(v) => v,
+        Err(e) => {
+            error!("Unable to parse env.yaml: {}", e);
+            std::process::exit(1);
+        }
+    }
 }
 
 fn with_clients(clients: Clients) -> impl Filter<Extract = (Clients,), Error = Infallible> + Clone {
     warp::any().map(move || clients.clone())
+}
+
+fn with_environment(env: serde_yaml::Value) -> impl Filter<Extract = (serde_yaml::Value,), Error = Infallible> + Clone {
+    warp::any().map(move || env.clone())
+}
+
+fn with_redis(redis_conn: RedisConnectionPool) -> impl Filter<Extract = (RedisConnectionPool,), Error = Infallible> + Clone {
+    warp::any().map(move || redis_conn.clone())
 }
