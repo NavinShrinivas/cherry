@@ -2,10 +2,10 @@
 #![allow(dead_code)]
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum CeXStep {
     CeXRedis,
+    CeXRoom,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -13,6 +13,7 @@ pub enum CeXErrorType {
     ReadError,
     WriteError,
     ConnectError,
+    RoomDoesntExist,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

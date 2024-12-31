@@ -12,8 +12,7 @@ pub struct Error {
     pub stack: Option<CeXError>,
 }
 
-
-impl Error{
+impl Error {
     pub fn new(code: u16, message: String, stack: Option<CeXError>) -> Self {
         Error {
             status: "false".to_string(),

@@ -1,26 +1,26 @@
 #![allow(unused)]
 #![allow(dead_code)]
 
-use std::time::SystemTime;
 use chrono::{offset::Utc, DateTime};
 use serde::{Deserialize, Serialize};
+use std::time::SystemTime;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Ping{
+pub struct Ping {
     pub id: String,
     pub time: String,
     pub message: String,
 }
 
 impl Ping {
-    pub fn new(id: String,) -> Self {
+    pub fn new(id: String) -> Self {
         let system_time = SystemTime::now();
         let datetime: DateTime<Utc> = system_time.into();
         let time_str = datetime.format("%d/%m/%Y %T").to_string();
         return Ping {
             id,
             time: time_str,
-            message : "pong".to_string(),
+            message: "pong".to_string(),
         };
     }
     fn get_ping_id(s: Self) -> String {

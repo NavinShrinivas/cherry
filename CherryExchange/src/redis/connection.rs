@@ -8,9 +8,11 @@ const CACHE_POOL_TIMEOUT_SECONDS: u64 = 1;
 const CACHE_POOL_EXPIRE_SECONDS: u64 = 60;
 
 pub fn connect(env: &serde_yaml::Value) -> Result<r2d2::Pool<RedisConnectionManager>, CeXError> {
-    let redis_addr = env["redis"]["addr"].as_str().unwrap_or("redis://127.0.0.1/");
-    let manager = RedisConnectionManager::new(redis_addr)
-        .expect("Unable to create Redis Connection Manager");
+    let redis_addr = env["redis"]["addr"]
+        .as_str()
+        .unwrap_or("redis://127.0.0.1/");
+    let manager =
+        RedisConnectionManager::new(redis_addr).expect("Unable to create Redis Connection Manager");
     match r2d2::Pool::builder()
         .max_size(CACHE_POOL_MAX_OPEN)
         .max_lifetime(Some(Duration::from_secs(CACHE_POOL_EXPIRE_SECONDS)))
@@ -26,8 +28,10 @@ pub fn connect(env: &serde_yaml::Value) -> Result<r2d2::Pool<RedisConnectionMana
     }
 }
 
-pub fn get_con(pool: &r2d2::Pool<RedisConnectionManager>) -> Result<r2d2::PooledConnection<RedisConnectionManager>, CeXError> {
-    match pool.get_timeout(Duration::from_secs(CACHE_POOL_TIMEOUT_SECONDS)){
+pub fn get_con(
+    pool: &r2d2::Pool<RedisConnectionManager>,
+) -> Result<r2d2::PooledConnection<RedisConnectionManager>, CeXError> {
+    match pool.get_timeout(Duration::from_secs(CACHE_POOL_TIMEOUT_SECONDS)) {
         Ok(con) => Ok(con),
         Err(e) => Err(CeXError::new(
             CeXStep::CeXRedis,

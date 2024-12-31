@@ -69,12 +69,16 @@ async fn websocket_func_muxer(
         }
     };
 
-    let msg_type = match message_obj["type"].as_str() {
+    let msg_type = match message_obj["message_type"].as_str() {
         Some(v) => v,
         None => {
             send_message_to_client(
                 id,
-                Error::new(100, "type is a compulsory field in requests".to_string(), None),
+                Error::new(
+                    100,
+                    "type is a compulsory field in requests".to_string(),
+                    None,
+                ),
                 clients,
             )
             .await;
@@ -90,7 +94,10 @@ async fn websocket_func_muxer(
              *  "room_name": "room_name"
              * }
              */
-            let room_name = message_obj["room_name"].as_str().unwrap_or("Just another room").to_string();
+            let room_name = message_obj["room_name"]
+                .as_str()
+                .unwrap_or("Just another room")
+                .to_string();
             let resp = match Room::create_room(room_name, id.to_string(), redis_conn_pool.clone()) {
                 Ok(v) => v,
                 Err(e) => {
@@ -105,18 +112,43 @@ async fn websocket_func_muxer(
             /*
              * {
              *  "type": "joinRoom",
-             *  "message": "room_id"
+             *  "room_id": "room_id"
              * }
              */
-            let _message = message_obj["message"].as_str().unwrap();
-            //[TODO] store this client id as part of the room in redis
+            let room_id = match message_obj["room_id"].as_str() {
+                Some(v) => v,
+                None => {
+                    send_message_to_client(
+                        id,
+                        Error::new(
+                            100,
+                            "room_id is a compulsory field in requests".to_string(),
+                            None,
+                        ),
+                        clients,
+                    )
+                    .await;
+                    return;
+                }
+            };
+            let resp =
+                match Room::join_room(room_id.to_string(), id.to_string(), redis_conn_pool.clone())
+                {
+                    Ok(v) => v,
+                    Err(e) => {
+                        let error = Error::new(102, "failed to join room".to_string(), Some(e));
+                        send_message_to_client(id, error, clients).await;
+                        return;
+                    }
+                };
+            send_message_to_client(id, resp, clients).await;
         }
         "sdpOffer" => {
             /*
              * {
              *  "type": "sdpOffer",
              *  "to": "room_id"
-             *  "message": "sdp_offer"
+             *  "offer": "sdp_offer"
              * }
              */
             let _message = message_obj["message"].as_str().unwrap();

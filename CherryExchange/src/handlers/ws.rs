@@ -12,5 +12,9 @@ pub async fn ws_handler(
     //Dummy empty client
     let id = uuid::Uuid::new_v4().to_string();
     let c = crate::Client { sender: None };
-    Ok(ws.on_upgrade(move |socket| client_connection(socket, id, clients, c, env, redis_conn_pool)))
+    Ok(
+        ws.on_upgrade(move |socket| {
+            client_connection(socket, id, clients, c, env, redis_conn_pool)
+        }),
+    )
 }

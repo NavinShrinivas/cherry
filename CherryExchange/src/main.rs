@@ -1,4 +1,5 @@
-use log::{info, error};
+use log::{error, info};
+use r2d2_redis::{r2d2, RedisConnectionManager};
 use serde_yaml;
 use simple_logger::SimpleLogger;
 use std::collections::HashMap;
@@ -8,12 +9,11 @@ use std::io::prelude::*;
 use std::sync::Arc;
 use tokio::sync::{mpsc, RwLock};
 use warp::{ws::Message, Filter};
-use r2d2_redis::{r2d2, RedisConnectionManager};
 
-mod handlers;
-mod ws;
-mod redis;
 mod CeXError;
+mod handlers;
+mod redis;
+mod ws;
 
 #[derive(Debug, Clone)]
 
@@ -36,10 +36,13 @@ async fn main() {
 
     let port = env["port"].as_u64().unwrap_or(3030);
 
-    info!("Starting Application Cherry Exchange Server on 0.0.0.0:{}", port);
+    info!(
+        "Starting Application Cherry Exchange Server on 0.0.0.0:{}",
+        port
+    );
     info!("Connecting to Redis");
 
-    let redis_conn : RedisConnectionPool = match redis::connection::connect(&env){
+    let redis_conn: RedisConnectionPool = match redis::connection::connect(&env) {
         Ok(pool) => Arc::new(pool),
         Err(e) => {
             error!("Unable to connect to Redis: {}", e);
@@ -68,23 +71,27 @@ fn load_yaml_env() -> serde_yaml::Value {
     file.read_to_string(&mut contents)
         .expect("Unable to read file");
 
-    return match serde_yaml::from_str(&contents){
+    return match serde_yaml::from_str(&contents) {
         Ok(v) => v,
         Err(e) => {
             error!("Unable to parse env.yaml: {}", e);
             std::process::exit(1);
         }
-    }
+    };
 }
 
 fn with_clients(clients: Clients) -> impl Filter<Extract = (Clients,), Error = Infallible> + Clone {
     warp::any().map(move || clients.clone())
 }
 
-fn with_environment(env: serde_yaml::Value) -> impl Filter<Extract = (serde_yaml::Value,), Error = Infallible> + Clone {
+fn with_environment(
+    env: serde_yaml::Value,
+) -> impl Filter<Extract = (serde_yaml::Value,), Error = Infallible> + Clone {
     warp::any().map(move || env.clone())
 }
 
-fn with_redis(redis_conn: RedisConnectionPool) -> impl Filter<Extract = (RedisConnectionPool,), Error = Infallible> + Clone {
+fn with_redis(
+    redis_conn: RedisConnectionPool,
+) -> impl Filter<Extract = (RedisConnectionPool,), Error = Infallible> + Clone {
     warp::any().map(move || redis_conn.clone())
 }
