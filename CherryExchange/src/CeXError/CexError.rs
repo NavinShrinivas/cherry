@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum CeXStep {
+    CeXRequestProcessing,
     CeXRedis,
     CeXRoom,
 }
@@ -14,6 +15,7 @@ pub enum CeXErrorType {
     WriteError,
     ConnectError,
     RoomDoesntExist,
+    SerDeError
 }
 
 #[derive(Debug, Serialize, Deserialize)]

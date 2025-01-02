@@ -1,4 +1,4 @@
-use crate::handlers::{error::Error, ping::Ping, room::Room};
+use crate::handlers::{error::Error, ping::Ping, room::Room, sdp::SDPOfferResponse};
 use crate::{Client, Clients, RedisConnectionPool};
 use futures::{FutureExt, StreamExt};
 use log::error;
@@ -148,12 +148,21 @@ async fn websocket_func_muxer(
              * {
              *  "type": "sdpOffer",
              *  "to": "room_id"
-             *  "offer": "sdp_offer"
+             *  "offer": "sdp_offer" -- Vec<u8>
              * }
              */
-            let _message = message_obj["message"].as_str().unwrap();
-            //[TODO] send offer to all "id's" for this room in redis, along with current sender
-            //client id, this is the only way we can keep track of sender during answer
+            let semi_resp = SDPOfferResponse::from_request(message_obj.clone());
+            let resp = match semi_resp {
+                Ok(v) => {
+                    v.send_offer_from_self(id.to_string())
+                },
+                Err(e) => {
+                    send_message_to_client(id, e, clients).await;
+                    return;
+                }
+            };
+            let to = resp.to.clone();
+            send_message_to_client(to.as_str(), resp, clients).await;
         }
         "sdpAnswer" => {
             /*
