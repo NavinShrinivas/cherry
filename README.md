@@ -10,3 +10,7 @@ A un-marshal/marshal implementation for the STUN protocol along with client. Hel
 ## CherryExchange 
 
 A room management and signaling server. Doesn't maintain any state on disk, required to be alive at all times.
+
+## CherryICE 
+
+Contains the ICE agent logic along with other SDP attributes logic.
