@@ -94,11 +94,63 @@ impl Room {
         match connection.get::<String, Room>(room_id.clone()) {
             Ok(mut v) => {
                 debug!("Room found: {:?}", v);
-                v.clients.push(id.clone());
+                if v.clients.contains(&id) == false{
+                    v.clients.push(id.clone());
+                }
                 match connection.set::<String, Room, String>(room_id.clone(), v.clone()) {
                     Ok(_) => {
                         return Ok(RoomJoinResponse {
                             message_type: "joinRoomResponse".to_string(),
+                            status: "true".to_string(),
+                            room_id,
+                            users: v.clients,
+                        });
+                    }
+                    Err(e) => {
+                        error!("Error updating room in redis: {}", e);
+                        return Err(CeXError::new(
+                            CeXStep::CeXRedis,
+                            CeXErrorType::WriteError,
+                            e.to_string(),
+                        ));
+                    }
+                }
+            }
+            Err(e) => {
+                error!("Error getting room from redis: {}", e);
+                return Err(CeXError::new(
+                    CeXStep::CeXRoom,
+                    CeXErrorType::RoomDoesntExist,
+                    e.to_string(),
+                ));
+            }
+        }
+    }
+    pub fn leave_room(
+        room_id: String,
+        id: String, //id to client wanting to leave the room
+        redis_conn_pool: RedisConnectionPool,
+    ) -> Result<RoomJoinResponse, CeXError> {
+        let mut connection = match redisHandle::connection::get_con(&redis_conn_pool) {
+            Ok(con) => con,
+            Err(e) => {
+                error!("Error getting redis connection: {}", e);
+                return Err(CeXError::new(
+                    CeXStep::CeXRedis,
+                    CeXErrorType::ConnectError,
+                    e.to_string(),
+                ));
+            }
+        };
+        //[TODO] Can make use to redis HSETs instead of this dirty serde way
+        match connection.get::<String, Room>(room_id.clone()) {
+            Ok(mut v) => {
+                debug!("Room found: {:?}", v);
+                v.clients.retain(|x| x != &id);
+                match connection.set::<String, Room, String>(room_id.clone(), v.clone()) {
+                    Ok(_) => {
+                        return Ok(RoomJoinResponse {
+                            message_type: "leaveRoomResponse".to_string(),
                             status: "true".to_string(),
                             room_id,
                             users: v.clients,

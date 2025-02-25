@@ -37,7 +37,7 @@ impl StunClient {
     /// Not for actual use, for tests, prototypes and demos.
     pub fn with_test_stun_server() -> Self {
         use std::net::ToSocketAddrs;
-        let stun_server = "stunserver2024.stunprotocol.org:3478"
+        let stun_server = "stunserver2025.stunprotocol.org:3478"
             .to_socket_addrs()
             .unwrap()
             .filter(|x| x.is_ipv4())
@@ -402,6 +402,54 @@ impl StunClient {
         let udp = UdpSocket::bind(local_addr).unwrap();
         info!("client addr : {:?}", local_addr);
         let client = self::StunClient::with_test_stun_server();
+
+        info!(
+            "making stun server call : {:?}",
+            client.stun_server.to_string()
+        );
+        match client.send_request(&udp, stun_msg.clone(), encode_ctx.clone()) {
+            Ok(res) => {
+                for i in res.body.attributes.iter() {
+                    match i.value {
+                        crate::stunAttributes::STUNAttributesContent::XORMappedAddress {
+                            address,
+                        } => {
+                            return Ok(address);
+                        }
+                        crate::stunAttributes::STUNAttributesContent::MappedAddress { address } => {
+                            return Ok(address);
+                        }
+                        _ => {
+                            continue;
+                        }
+                    }
+                }
+            }
+            Err(e) => return Err(e),
+        };
+        return Err(STUNError {
+            step: STUNStep::STUNNetwork,
+            error_type: STUNErrorType::DidNotFindExpectedAttribute,
+            message: "Did not find XOR mapped or mapped address from server response".to_string(),
+        });
+    }
+
+    /// Get external (server-reflexive transport address) IP address and port of specified UDP socket with stun server of your choice
+    pub fn get_server_reflexive_address_custom_stun_server(
+        src_port: u32,
+        stun_server: String,
+    ) -> Result<SocketAddr, STUNError> {
+        let encode_ctx = crate::STUNContext::context::STUNContext::new();
+        let stun_msg = crate::STUN::stun::STUN::new_default(
+            crate::stunHeader::STUNMessageClass::Request,
+            crate::stunHeader::STUNMessageMethod::Binding,
+            None,
+        );
+
+        let local_addr: SocketAddr = format!("{}:{}", "0.0.0.0", src_port).parse().unwrap();
+        let udp = UdpSocket::bind(local_addr).unwrap();
+        info!("client addr : {:?}", local_addr);
+        let client = self::StunClient::client_with_addr(stun_server);
 
         info!(
             "making stun server call : {:?}",

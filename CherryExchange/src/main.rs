@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use log::{error, info};
 use r2d2_redis::{r2d2, RedisConnectionManager};
 use serde_yaml;

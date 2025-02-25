@@ -4,7 +4,7 @@ use CherrySTUN::*;
 // use CherrySTUN::stunEncode::STUNEncode;
 // use std::io::Cursor;
 // use std::net::UdpSocket;
-// use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use log::{info, error, warn};
 
 use simple_logger::SimpleLogger;
@@ -66,7 +66,7 @@ fn main() {
     // }
 
     //Example 3: Fetching server reflexive address
-    match stunClient::StunClient::get_server_reflexive_address(8080){
+    match stunClient::StunClient::get_server_reflexive_address(8081){
         Ok(addr) => {
             info!("Server reflexive address/public: {:?}", addr);
             warn!("Note: NAT hole to actual peers have not been made...should be done after ICE exchange.");
@@ -75,5 +75,9 @@ fn main() {
             warn!("This is not a complete ICE implementation.");
         }
         Err(e) => error!("{:?}", e)
+    }
+    match stunClient::StunClient::NATHolePunching(8081, SocketAddr::new(IpAddr::V4(Ipv4Addr::new(192,0, 2, 1)),2003)){
+        Ok(())=>{},
+        Err(e) => error!("{:?}", e),
     }
 }

@@ -15,6 +15,14 @@ Consequently, ICE assigns one of the agents in the role of the
    sends a second STUN request on its NOMINATED candidate pair, but this
    time with a flag set to tell the peer that this pair has been
    nominated for use.  This is shown in Figure 4.
+## After offer traading : 
+Once an agent has sent its offer or its answer, that agent MUST be
+   prepared to receive both STUN and media packets on each candidate.
+   As discussed in Section 11.1, media packets can be sent to a
+   candidate prior to its appearance as the default destination for
+   media in an offer or answer.
+
+Meaning, there are n number of servers listening for stun messages for each candidate. 
 
 ## Singlaing infrastructure: 
 

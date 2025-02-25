@@ -1,5 +1,8 @@
+#![allow(unused)]
+#![allow(dead_code)]
+
+use crate::CeXError::CexError::{CeXError, CeXErrorType, CeXStep};
 use serde::{Deserialize, Serialize};
-use crate::CeXError::CexError::{CeXError, CeXStep, CeXErrorType};
 
 //respose goes to client from server (server -> client)
 #[derive(Serialize, Deserialize, Debug)]
@@ -16,6 +19,46 @@ pub struct SDPAnswerResponse {
     pub from: String,
     pub to: String,
     pub answer: Vec<u8>,
+}
+
+impl SDPAnswerResponse {
+    pub fn from_request(message_obj: serde_json::Value) -> Result<Self, CeXError> {
+        let to = match message_obj["to"].as_str() {
+            Some(v) => v,
+            None => {
+                return Err(CeXError {
+                    step: CeXStep::CeXRequestProcessing,
+                    error_type: CeXErrorType::SerDeError,
+                    message: "to is a compulsory field in requests".to_string(),
+                });
+            }
+        };
+        let answer: Vec<u8> = match serde_json::from_value(message_obj["answer"].clone()) {
+            Ok(v) => v,
+            Err(e) => {
+                return Err(CeXError {
+                    step: CeXStep::CeXRequestProcessing,
+                    error_type: CeXErrorType::SerDeError,
+                    message: "answer is a compulsory field in requests: ".to_string()
+                        + &e.to_string(),
+                });
+            }
+        };
+        Ok(SDPAnswerResponse {
+            message_type: "sdpAnswer".to_string(),
+            from: "".to_string(),
+            to: to.to_string(),
+            answer,
+        })
+    }
+    pub fn send_answer_from_self(self, id: String) -> Self {
+        return SDPAnswerResponse {
+            message_type: "sdpAnswer".to_string(),
+            from: id,
+            to: self.to,
+            answer: self.answer,
+        };
+    }
 }
 
 impl SDPOfferResponse {
@@ -52,7 +95,8 @@ impl SDPOfferResponse {
                 return Err(CeXError {
                     step: CeXStep::CeXRequestProcessing,
                     error_type: CeXErrorType::SerDeError,
-                    message: "offer is a compulsory field in requests: ".to_string() + &e.to_string(),
+                    message: "offer is a compulsory field in requests: ".to_string()
+                        + &e.to_string(),
                 });
             }
         };

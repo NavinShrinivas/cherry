@@ -1,5 +1,7 @@
 #![allow(unused)]
 #![allow(dead_code)]
+#![allow(non_snake_case)]
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -15,7 +17,7 @@ pub enum CeXErrorType {
     WriteError,
     ConnectError,
     RoomDoesntExist,
-    SerDeError
+    SerDeError,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

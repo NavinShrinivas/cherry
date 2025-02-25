@@ -13,4 +13,4 @@ A room management and signaling server. Doesn't maintain any state on disk, requ
 
 ## CherryICE 
 
-Contains the ICE agent logic along with other SDP attributes logic.
+Contains the ICE agent logic along with other SDP attributes logic (This would be the clients to the CherryExchange).

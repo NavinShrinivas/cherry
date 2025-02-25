@@ -1,4 +1,9 @@
-use crate::handlers::{error::Error, ping::Ping, room::Room, sdp::SDPOfferResponse};
+use crate::handlers::{
+    error::Error,
+    ping::Ping,
+    room::Room,
+    sdp::{SDPAnswerResponse, SDPOfferResponse},
+};
 use crate::{Client, Clients, RedisConnectionPool};
 use futures::{FutureExt, StreamExt};
 use log::error;
@@ -38,7 +43,7 @@ pub async fn client_connection(
         let msg = match result {
             Ok(msg) => msg,
             Err(e) => {
-                eprintln!("error receiving ws message for id: {}): {}", id.clone(), e);
+                error!("error receiving ws message for id: {}): {}", id.clone(), e);
                 break;
             }
         };
@@ -53,7 +58,7 @@ async fn websocket_func_muxer(
     id: &str,
     msg: warp::ws::Message,
     clients: &Clients,
-    env: serde_yaml::Value,
+    _env: serde_yaml::Value,
     redis_conn_pool: RedisConnectionPool,
 ) {
     let msg_str = match msg.to_str() {
@@ -153,9 +158,7 @@ async fn websocket_func_muxer(
              */
             let semi_resp = SDPOfferResponse::from_request(message_obj.clone());
             let resp = match semi_resp {
-                Ok(v) => {
-                    v.send_offer_from_self(id.to_string())
-                },
+                Ok(v) => v.send_offer_from_self(id.to_string()),
                 Err(e) => {
                     send_message_to_client(id, e, clients).await;
                     return;
@@ -169,12 +172,56 @@ async fn websocket_func_muxer(
              * {
              *  "type": "sdpAnswer",
              *  "to": "client_id"
-             *  "message": "sdp_answer"
+             *  "answer": "sdp_answer"
              * }
              */
-            let _message = message_obj["message"].as_str().unwrap();
-            //[TODO] send the answer only to the client id given in the message_obj, also include
-            //the sender client id
+            let semi_resp = SDPAnswerResponse::from_request(message_obj.clone());
+            let resp = match semi_resp {
+                Ok(v) => v.send_answer_from_self(id.to_string()),
+                Err(e) => {
+                    send_message_to_client(id, e, clients).await;
+                    return;
+                }
+            };
+            let to = resp.to.clone();
+            send_message_to_client(to.as_str(), resp, clients).await;
+        }
+        "leaveRoom" => {
+            /*
+             * {
+             *  "type": "leaveRoom",
+             *  "room_id": "room_id"
+             * }
+             */
+            let room_id = match message_obj["room_id"].as_str() {
+                Some(v) => v,
+                None => {
+                    send_message_to_client(
+                        id,
+                        Error::new(
+                            100,
+                            "room_id is a compulsory field in requests".to_string(),
+                            None,
+                        ),
+                        clients,
+                    )
+                    .await;
+                    return;
+                }
+            };
+            let resp = match Room::leave_room(
+                room_id.to_string(),
+                id.to_string(),
+                redis_conn_pool.clone(),
+            ) {
+                Ok(v) => v,
+                Err(e) => {
+                    let error = Error::new(102, "failed to leave room".to_string(), Some(e));
+                    send_message_to_client(id, error, clients).await;
+                    return;
+                }
+            };
+            send_message_to_client(id, resp, clients).await;
         }
         "ping" => {
             /*
